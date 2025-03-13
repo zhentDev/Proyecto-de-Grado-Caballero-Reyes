@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    proyecto_monitoreo_bots_lib::run()
+	proyecto_monitoreo_bots_lib::run()
 }

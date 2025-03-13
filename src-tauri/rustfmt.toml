@@ -1,0 +1,8 @@
+# Usar tabulaciones en lugar de espacios
+hard_tabs = true
+
+# Tamaño de la tabulación
+tab_spaces = 4
+
+# Ancho máximo de línea
+max_width = 100

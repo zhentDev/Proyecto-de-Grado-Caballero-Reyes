@@ -1,10 +1,38 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
-  "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "identifier": "default",
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+    "fs:default",
+    "dialog:default",
+    {
+      "allow": [
+        {
+          "path": "D:/RPA/AA/PoC 2/"
+        }
+      ],
+      "identifier": "fs:allow-write-text-file"
+    },
+    {
+      "allow": [
+        {
+          "path": "D:/RPA/AA/PoC 1/"
+        }
+      ],
+      "identifier": "fs:allow-write-text-file"
+    },
+    {
+      "allow": [
+        {
+          "path": ""
+        }
+      ],
+      "identifier": "fs:allow-write-text-file"
+    }
+  ],
+  "windows": [
+    "main"
   ]
 }
