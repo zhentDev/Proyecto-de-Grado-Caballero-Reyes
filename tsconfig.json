@@ -15,7 +15,6 @@
 		"noEmit": true,
 		"jsx": "react-jsx",
 
-<<<<<<< HEAD
 		/* Linting */
 		"strict": true,
 		"noUnusedLocals": true,
@@ -24,14 +23,4 @@
 	},
 	"include": ["src/**/*"],
 	"references": [{ "path": "./tsconfig.node.json" }]
-=======
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": ["src/**/*"],
-  "references": [{ "path": "./tsconfig.node.json" }]
->>>>>>> b9ebfff3d9aa68675de9a4b67a5a4759747c09d8
 }
