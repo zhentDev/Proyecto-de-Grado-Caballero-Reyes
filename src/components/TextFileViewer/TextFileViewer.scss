@@ -1,0 +1,75 @@
+main {
+    display: grid;
+    place-items: center;
+    height: 100%;
+
+    table {
+        font-family: "Inter", sans-serif;
+        border-collapse: collapse;
+        font-size: 14px;
+        box-sizing: border-box;
+        width: 100%;
+
+
+        tr {
+            background-color: #1f2327;
+            color: white;
+            font-size: 19.5px;
+            text-align: start;
+
+
+            &:nth-child(2n+1) {
+                background-color: #25333d;
+            }
+
+            .INFO {
+                background: #50774c;
+            }
+
+            .WARN {
+                background: #f0c674;
+            }
+
+            .ERROR {
+                background: #cc6666;
+            }
+
+            td {
+                padding: 8px 16px;
+                text-align: start;
+
+            }
+        }
+
+        thead {
+            tr {
+                th {
+                    box-sizing: border-box;
+                    padding: 8px 16px;
+                    text-align: start;
+                    min-width: 9px;
+                    user-select: none;
+                    background-color: #1f2327;
+                    position: sticky;
+                    top: 0;
+
+                    &.resizing {
+                        &>div {
+                            border-right: 4px solid #4c6477;
+                        }
+                    }
+
+                    .grip {
+                        content: "&nbsp;";
+                        position: absolute;
+                        top: 0;
+                        bottom: 0;
+                        right: 0;
+                        width: 8px;
+                        cursor: col-resize;
+                    }
+                }
+            }
+        }
+    }
+}

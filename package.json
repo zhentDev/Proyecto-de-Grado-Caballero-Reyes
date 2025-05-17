@@ -15,25 +15,29 @@
 		"format:rust": "cargo fmt"
 	},
 	"dependencies": {
+		"@monaco-editor/react": "^4.7.0",
 		"@tailwindcss/vite": "^4.0.11",
-		"@tauri-apps/api": "^2",
+		"@tauri-apps/api": "^2.5.0",
+		"@tauri-apps/cli": "^2.5.0",
 		"@tauri-apps/plugin-dialog": "^2.2.0",
-		"@tauri-apps/plugin-fs": "^2.2.0",
+		"@tauri-apps/plugin-fs": "^2.2.1",
 		"@tauri-apps/plugin-opener": "^2",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
 		"react-hot-toast": "^2.5.2",
+		"react-icons": "^5.5.0",
+		"tailwind-merge": "^3.2.0",
 		"tailwindcss": "^4.0.11",
 		"zod": "^3.24.2",
 		"zustand": "^5.0.3"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"@tauri-apps/cli": "^2",
+		"@types/node": "^22.13.9",
 		"@types/react": "^18.3.1",
 		"@types/react-dom": "^18.3.1",
-		"@types/node": "^22.13.9",
 		"@vitejs/plugin-react": "^4.3.4",
+		"sass": "^1.87.0",
 		"typescript": "~5.6.2",
 		"vite": "^6.0.3"
 	}

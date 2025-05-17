@@ -1,9 +1,104 @@
-import OriginFolder from "./OriginFolder";
+import { readDir, watch } from "@tauri-apps/plugin-fs";
+import { useEffect } from "react";
+import { useContentPathStore } from "../store/contentPathStore";
+import FileItem from "./FileItem";
+import { listen } from "@tauri-apps/api/event";
 
 function BannerList() {
+	const setFilesNames = useContentPathStore((state) => state.setFilesNames);
+	const filesNames = useContentPathStore((state) => state.filesNames);
+	const setFoldersNames = useContentPathStore((state) => state.setFoldersNames);
+	const foldersNames = useContentPathStore((state) => state.foldersNames);
+	const path = useContentPathStore((state) => state.pathMain);
+
+	useEffect(() => {
+		async function loadFilesFolders() {
+			try {
+				const result = await readDir(path);
+				const fileNames = result
+					.map((file) => (file.isFile ? file.name : null))
+					.filter((name) => name !== null);
+				setFilesNames(fileNames);
+				const folderNames = result
+					.map((folder) => (folder.isDirectory ? folder.name : null))
+					.filter((name) => name !== null);
+				setFoldersNames(folderNames);
+			} catch (error) {
+				console.error("Error al leer el directorio:", error);
+			}
+		}
+		loadFilesFolders();
+
+		console.log("WATCHING");
+		const startWatching = async () => {
+			try {
+				const unwatch = await watch(
+					path,
+					(event) => {
+						console.log(`Cambio detectado: ${event.type} en ${event.paths}`);
+						loadFilesFolders();
+					},
+					{ delayMs: 100 }
+				);
+				console.log("WATCHING", unwatch);
+				return () => unwatch();
+			} catch (error) {
+				console.error("Error al observar el directorio:", error);
+			}
+		};
+
+		const stopWatching = startWatching();
+		return () => {
+			stopWatching.then((unwatchFn) => {
+				if (typeof unwatchFn === "function") {
+					unwatchFn();
+				}
+			}).catch((error) => {
+				console.error("Error al detener la observación:", error);
+			});
+		};
+	}, [path, setFilesNames, setFoldersNames]);
+
+	useEffect(() => {
+		async function loadFilesFolders() {
+			try {
+				const result = await readDir(path);
+				const fileNames = result
+					.map((file) => (file.isFile ? file.name : null))
+					.filter((name) => name !== null);
+				setFilesNames(fileNames);
+				const folderNames = result
+					.map((folder) => (folder.isDirectory ? folder.name : null))
+					.filter((name) => name !== null);
+				setFoldersNames(folderNames);
+			} catch (error) {
+				console.error("Error al leer el directorio:", error);
+			}
+		}
+		loadFilesFolders();
+
+		const unlisten = listen("file-change", (event) => {
+			console.log("Evento recibido desde el backend:", event);
+			loadFilesFolders();
+		});
+
+		return () => {
+			unlisten.then((fn) => fn());
+		};
+	}, [path, setFilesNames, setFoldersNames]);
+
 	return (
 		<div>
-			<OriginFolder path={""} />
+			<ul>
+				{foldersNames.map((folder) => (
+					<FileItem key={folder} item={folder} />
+				))}
+			</ul>
+			<ul>
+				{filesNames.map((file) => (
+					<FileItem key={file} item={file} />
+				))}
+			</ul>
 		</div>
 	);
 }

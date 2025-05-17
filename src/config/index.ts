@@ -3,7 +3,13 @@ import { z } from "zod";
 
 const getFromRust = async (path: string) => {
 	try {
-		return await invoke("set_oririn_path", { path });
+		const resultWrite = await invoke("set_write_permission", { path });
+		if (resultWrite === "El permiso ya existe") {
+			const readWrite = await invoke("set_read_permission", { path });
+			if (readWrite === "El permiso ya existe") {
+				return await invoke("set_remove_permission", { path });
+			}
+		}
 	} catch (err) {
 		console.log("getFromRust", err);
 	}
@@ -12,10 +18,12 @@ const getFromRust = async (path: string) => {
 };
 
 async function getEnv() {
-	const path = "D:/RPA/AA/PoC 1/";
+	const path = "D:/RPA/AA/PoC 1" + "/Inputs";
 	const a = await getFromRust(path);
 	console.log(path);
 	console.log(a);
+
+	return path;
 }
 
 getEnv();
@@ -29,6 +37,6 @@ const envVars = z.object({
 
 declare global {
 	namespace NodeJS {
-		interface ProcessEnv extends z.infer<typeof envVars> {}
+		interface ProcessEnv extends z.infer<typeof envVars> { }
 	}
 }

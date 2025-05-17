@@ -1,0 +1,68 @@
+html,
+body {
+	box-sizing: border-box;
+	font-family: 'Open Sans', sans-serif;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+.container-layout {
+	width: 100%;
+	display: flex;
+	background-color: #25333d;
+	overflow: hidden;
+}
+
+.menu {
+	max-width: 250px;
+
+	.content {
+		padding: 6px;
+		color: white;
+	}
+
+	&.resizingLayout {
+		&>div.gripLayout {
+			border-right: 4px solid #4c6477;
+		}
+	}
+
+	.gripLayout {
+		content: "&nbsp;";
+		// position: absolute;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		width: 8px;
+		cursor: col-resize;
+
+		width: 1px;
+		height: 100%;
+		background-color: #4c6477;
+		cursor: col-resize;
+		position: relative;
+
+		&::before {
+			content: "";
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: -4px;
+			right: -4px;
+		}
+
+		&:hover {
+			width: 6px;
+		}
+	}
+}
+
+.editor {
+	overflow: auto;
+	background-color: #1f2327;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	color: white;
+}
