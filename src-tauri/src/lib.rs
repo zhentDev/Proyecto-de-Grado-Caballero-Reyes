@@ -23,6 +23,8 @@ pub fn run() {
 			permissions::remove::set_remove_permission,
 			process::logs::process_log_file,
 			process::watch::watch_file,
+			process::getpath::open_folder_dialog,
+			process::getpath::get_folder_contents,
 		])
 		.run(tauri::generate_context!())
 		.expect("error while running tauri application");

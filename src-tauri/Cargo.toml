@@ -29,3 +29,4 @@ encoding_rs = "0.8.35"
 encoding_rs_io = "0.1"
 notify = "6.1"
 embed-manifest = "1"
+rfd = { version = "0.12" }
