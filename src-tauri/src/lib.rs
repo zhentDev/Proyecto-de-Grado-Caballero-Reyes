@@ -1,20 +1,26 @@
-use tauri_plugin_fs::FsExt;
-
+mod db;
 mod permissions;
 mod process;
+
+use tauri::path::BaseDirectory::AppConfig;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 	tauri::Builder::default()
+		.plugin(
+			tauri_plugin_sql::Builder::default()
+				.add_migrations(
+					"sqlite://src-tauri/src/db/database.sqlite",
+					db::db::apply_migration(),
+				)
+				.build(),
+		)
 		.plugin(tauri_plugin_dialog::init())
 		.plugin(tauri_plugin_fs::init())
 		.plugin(tauri_plugin_opener::init())
-		.setup(|app| {
-			// allowed the given directory
-			let scope = app.fs_scope();
-			let _ = scope.allow_directory(r"D:/tauri-app/avatar.txt", false);
-			dbg!(scope.is_allowed(r"D:/tauri-app/avatar.txt"));
-
+		// .setup(|_app| Ok(()))
+		.setup(|_app| {
+			println!("{:?}", AppConfig);
 			Ok(())
 		})
 		.invoke_handler(tauri::generate_handler![

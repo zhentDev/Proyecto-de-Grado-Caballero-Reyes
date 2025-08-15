@@ -20,7 +20,8 @@ interface ContentPathState {
 	setSelectedFolder: (folder: string | null) => void;
 	removeFolderName: (name: string) => void;
 
-	pathMain: string;
+	pathMain: string | null;
+	setPathMain: (path: string | null) => void;
 }
 
 export const useContentPathStore = create<ContentPathState>((set) => ({
@@ -49,5 +50,6 @@ export const useContentPathStore = create<ContentPathState>((set) => ({
 		set((state) => ({
 			foldersNames: state.foldersNames.filter((n) => n !== name),
 		})),
-	pathMain: "D:/RPA/AA/PoC 1/",
+	pathMain: null,
+	setPathMain: (path) => set({ pathMain: path }),
 }));

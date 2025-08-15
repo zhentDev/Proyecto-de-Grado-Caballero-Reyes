@@ -1,8 +1,8 @@
+import { listen } from "@tauri-apps/api/event";
 import { readDir, watch } from "@tauri-apps/plugin-fs";
 import { useEffect } from "react";
 import { useContentPathStore } from "../store/contentPathStore";
 import FileItem from "./FileItem";
-import { listen } from "@tauri-apps/api/event";
 
 function BannerList() {
 	const setFilesNames = useContentPathStore((state) => state.setFilesNames);
@@ -13,6 +13,7 @@ function BannerList() {
 
 	useEffect(() => {
 		async function loadFilesFolders() {
+			if (!path) return;
 			try {
 				const result = await readDir(path);
 				const fileNames = result
@@ -30,37 +31,37 @@ function BannerList() {
 		loadFilesFolders();
 
 		console.log("WATCHING");
+		let unwatch: (() => void) | undefined;
+
 		const startWatching = async () => {
+			if (!path) return;
 			try {
-				const unwatch = await watch(
+				unwatch = await watch(
 					path,
 					(event) => {
 						console.log(`Cambio detectado: ${event.type} en ${event.paths}`);
 						loadFilesFolders();
 					},
-					{ delayMs: 100 }
+					{ delayMs: 100 },
 				);
 				console.log("WATCHING", unwatch);
-				return () => unwatch();
 			} catch (error) {
 				console.error("Error al observar el directorio:", error);
 			}
 		};
 
-		const stopWatching = startWatching();
+		startWatching();
+
 		return () => {
-			stopWatching.then((unwatchFn) => {
-				if (typeof unwatchFn === "function") {
-					unwatchFn();
-				}
-			}).catch((error) => {
-				console.error("Error al detener la observación:", error);
-			});
+			if (typeof unwatch === "function") {
+				unwatch();
+			}
 		};
 	}, [path, setFilesNames, setFoldersNames]);
 
 	useEffect(() => {
 		async function loadFilesFolders() {
+			if (!path) return;
 			try {
 				const result = await readDir(path);
 				const fileNames = result
@@ -77,13 +78,21 @@ function BannerList() {
 		}
 		loadFilesFolders();
 
-		const unlisten = listen("file-change", (event) => {
-			console.log("Evento recibido desde el backend:", event);
-			loadFilesFolders();
-		});
+		let unlisten: (() => void) | undefined;
+
+		const listenFileChange = async () => {
+			unlisten = await listen("file-change", (event) => {
+				console.log("Evento recibido desde el backend:", event);
+				loadFilesFolders();
+			});
+		};
+
+		listenFileChange();
 
 		return () => {
-			unlisten.then((fn) => fn());
+			if (typeof unlisten === "function") {
+				unlisten();
+			}
 		};
 	}, [path, setFilesNames, setFoldersNames]);
 

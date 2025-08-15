@@ -22,7 +22,6 @@
 	"organizeImports": {
 		"enabled": true
 	},
-	"extends": ["eslint:recommended", "plugin:react/recommended"],
 	"linter": {
 		"enabled": true,
 		"rules": {

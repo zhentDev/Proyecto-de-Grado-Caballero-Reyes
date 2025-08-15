@@ -52,6 +52,7 @@ main {
                     background-color: #1f2327;
                     position: sticky;
                     top: 0;
+                    z-index: 2;
 
                     &.resizing {
                         &>div {
@@ -62,7 +63,34 @@ main {
                     .grip {
                         content: "&nbsp;";
                         position: absolute;
-                        top: 0;
+                        bottom: 0;
+                        right: 0;
+                        width: 8px;
+                        cursor: col-resize;
+                    }
+                }
+            }
+        }
+
+        tbody {
+            tr {
+                width: 100%;
+
+                td {
+                    position: relative;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+
+                    &.resizing {
+                        &>div {
+                            border-right: 4px solid #4c6477;
+                        }
+                    }
+
+                    .grip {
+                        content: "&nbsp;";
+                        position: absolute;
                         bottom: 0;
                         right: 0;
                         width: 8px;

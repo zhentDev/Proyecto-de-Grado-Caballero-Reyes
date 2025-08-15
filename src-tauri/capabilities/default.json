@@ -10,17 +10,22 @@
     "dialog:default",
     "fs:allow-watch",
     "fs:allow-unwatch",
+    "sql:default",
+    "sql:allow-execute",
     {
       "allow": [
         {
-          "path": "D:/RPA/AA/PoC 1/**/**"
+          "path": "D:/RPA/AA/PoC 1/**/*"
         }
       ],
       "identifier": "fs:allow-write-text-file"
     },
     {
       "allow": [
-        "**/*"
+        "**/*",
+        {
+          "path": "D:/RPA/AA/PoC 1/**/*"
+        }
       ],
       "identifier": "fs:scope",
       "requireLiteralLeadingDot": false
@@ -28,22 +33,6 @@
     {
       "allow": [
         {
-          "path": "D:/RPA/AA/PoC 1/**/**"
-        }
-      ],
-      "identifier": "fs:allow-remove"
-    },
-    {
-      "allow": [
-        {
-          "path": "D:/RPA/AA/PoC 1/**/*"
-        }
-      ],
-      "identifier": "fs:allow-write-text-file"
-    },
-    {
-      "allow": [
-        {
           "path": "D:/RPA/AA/PoC 1/**/*"
         }
       ],
@@ -52,55 +41,25 @@
     {
       "allow": [
         {
-          "path": "D:/RPA/AA/PoC 1/*"
+          "path": "D:/RPA/AA/PoC 1/Logs/**/*"
         }
       ],
       "identifier": "fs:allow-write-text-file"
     },
     {
       "allow": [
+        "**/*",
         {
-          "path": "D:/RPA/AA/PoC 1/Plantillas/**"
+          "path": "D:/RPA/AA/PoC 1/Logs/**/*"
         }
       ],
-      "identifier": "fs:allow-remove"
+      "identifier": "fs:scope",
+      "requireLiteralLeadingDot": false
     },
     {
       "allow": [
         {
-          "path": "D:/RPA/AA/PoC 1/*"
-        }
-      ],
-      "identifier": "fs:allow-remove"
-    },
-    {
-      "allow": [
-        {
-          "path": "D:/RPA/AA/PoC 1/Inputs/*"
-        }
-      ],
-      "identifier": "fs:allow-write-text-file"
-    },
-    {
-      "allow": [
-        {
-          "path": "D:/RPA/AA/PoC 1/Inputs/*"
-        }
-      ],
-      "identifier": "fs:allow-remove"
-    },
-    {
-      "allow": [
-        {
-          "path": "D:/RPA/AA/PoC 1/Inputs"
-        }
-      ],
-      "identifier": "fs:allow-write-text-file"
-    },
-    {
-      "allow": [
-        {
-          "path": "D:/RPA/AA/PoC 1/Inputs"
+          "path": "D:/RPA/AA/PoC 1/Logs/**/*"
         }
       ],
       "identifier": "fs:allow-remove"

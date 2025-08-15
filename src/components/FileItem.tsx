@@ -20,7 +20,7 @@ function FileItem({ item }: BannerFormProps) {
 		const accept = await window.confirm(
 			"¿Estás seguro de eliminar el archivo?",
 		);
-		if (!accept) return;
+		if (!accept || !path) return;
 
 		const filePath = await join(path, `${file}`);
 		await remove(filePath);
@@ -43,6 +43,7 @@ function FileItem({ item }: BannerFormProps) {
 				selectedFile?.name === item ? "bg-sky-950" : "",
 			)}
 			onClick={async () => {
+				if (!path) return;
 				const filePath = await join(path, `${item}`);
 				console.log(filePath);
 				const snippet = await readTextFile(filePath);
@@ -58,6 +59,7 @@ function FileItem({ item }: BannerFormProps) {
 			}}
 			onKeyDown={async (e) => {
 				if (e.key === "Enter" || e.key === " ") {
+					if (!path) return;
 					const filePath = await join(path, `${item}`);
 					console.log(filePath);
 					const snippet = await readTextFile(filePath);
