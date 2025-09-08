@@ -59,7 +59,7 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 			}
 		};
 
-		// setupWatcher();
+		setupWatcher();
 
 		// Limpieza de eventos al desmontar el componente
 		return () => {

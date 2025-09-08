@@ -1,5 +1,5 @@
 import { join } from "@tauri-apps/api/path";
-import { readDir, readTextFile, remove } from "@tauri-apps/plugin-fs";
+import { readDir, readTextFile, remove, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { FiTrash, FiX } from "react-icons/fi";
@@ -82,7 +82,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 			const content = await readDir(folderPath);
 
 			setChildren(content);
-			setSelectedFolder({ name: itemName, content });
+			setSelectedFolder({ name: itemName, content, path: folderPath });
 			setIsExpanded(!isExpanded);
 		} catch (error) {
 			console.error("Error al leer la carpeta:", error);

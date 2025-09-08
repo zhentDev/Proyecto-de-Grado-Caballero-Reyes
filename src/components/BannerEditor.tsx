@@ -1,5 +1,4 @@
 import Editor from "@monaco-editor/react";
-import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { useEffect, useState } from "react";
 import { TfiPencil } from "react-icons/tfi";
 import { getEnv } from "../config/initializePermissions";
@@ -8,6 +7,7 @@ import TextFileViewer from "./TextFileViewer/TextFileViewer";
 
 function BannerEditor({ separator }: { separator: string }) {
 	const selectedFile = useContentPathStore((state) => state.selectedFile);
+	const selectedFolder = useContentPathStore((state) => state.selectedFolder);
 	const [text, setText] = useState<string | undefined>("");
 	const path = useContentPathStore((state) => state.pathMain);
 
@@ -18,7 +18,7 @@ function BannerEditor({ separator }: { separator: string }) {
 			setText("");
 			return;
 		}
-		
+
 		// Solo inicializar el texto para archivos que NO sean .txt
 		if (!selectedFile.name.toLowerCase().endsWith(".txt")) {
 			setText(selectedFile.content || "");
@@ -36,9 +36,10 @@ function BannerEditor({ separator }: { separator: string }) {
 		// 	await writeTextFile(`${path}\\${selectedFile.name}`, text ?? "");
 		// }, 1000);
 		// return () => clearTimeout(saveText);
-	}, [text, selectedFile, path]);
+	}, [selectedFile]);
+	// }, [text, selectedFile, path]);
 
-	const pathComplete = path ? `${path}\\${selectedFile?.name}` : "";
+	const pathComplete = path ? `${selectedFolder?.path}\\${selectedFile?.name}` : "";
 
 	return (
 		<>

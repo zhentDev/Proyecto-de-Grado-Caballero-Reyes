@@ -13,7 +13,8 @@ pub fn process_log_file(
 	delimiter: String,
 ) -> Result<(Vec<Vec<String>>, Option<String>), String> {
 	// Abrir archivo con decoder de encoding
-	let file = File::open(&path).map_err(|e| format!("Error abriendo archivo: {}", e))?;
+	let file =
+		File::open(&path).map_err(|e| format!("Error abriendo archivo desde log.rs: {}", e))?;
 	let reader = BufReader::new(
 		DecodeReaderBytesBuilder::new()
 			.encoding(Some(WINDOWS_1252))

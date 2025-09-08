@@ -9,6 +9,7 @@ interface File {
 interface Folder {
 	name: string;
 	content: DirEntry[];
+	path: string;
 }
 
 interface ContentPathState {

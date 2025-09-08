@@ -10,7 +10,7 @@ pub async fn watch_file(path: String, window: tauri::Window) -> Result<(), Strin
 
 	// Verificar si el archivo existe primero
 	if !path_buf.exists() {
-		return Err("El archivo no existe".into());
+		return Err("El archivo no existe watch.rs".into());
 	}
 
 	// Configuración más robusta del watcher
