@@ -12,7 +12,7 @@ function Menu() {
 				<h1 className="title">PoC1</h1>
 			</div>
 			<div className="bg-zinc-800 border-2 border-sky-950 rounded-md content">
-				<BannerForm path={path} />
+				<BannerForm path={path ?? ""} />
 				<BannerList />
 			</div>
 		</div>

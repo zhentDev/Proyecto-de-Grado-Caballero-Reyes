@@ -37,32 +37,6 @@
         }
       ],
       "identifier": "fs:allow-remove"
-    },
-    {
-      "allow": [
-        {
-          "path": "D:/RPA/AA/PoC 1/Logs/**/*"
-        }
-      ],
-      "identifier": "fs:allow-write-text-file"
-    },
-    {
-      "allow": [
-        "**/*",
-        {
-          "path": "D:/RPA/AA/PoC 1/Logs/**/*"
-        }
-      ],
-      "identifier": "fs:scope",
-      "requireLiteralLeadingDot": false
-    },
-    {
-      "allow": [
-        {
-          "path": "D:/RPA/AA/PoC 1/Logs/**/*"
-        }
-      ],
-      "identifier": "fs:allow-remove"
     }
   ],
   "windows": [

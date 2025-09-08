@@ -13,10 +13,6 @@ pub async fn watch_file(path: String, window: tauri::Window) -> Result<(), Strin
 		return Err("El archivo no existe".into());
 	}
 
-	if !path_buf.exists() {
-		return Err("El archivo no existe".into());
-	}
-
 	// Configuración más robusta del watcher
 	let mut watcher: RecommendedWatcher = Watcher::new(
 		tx,

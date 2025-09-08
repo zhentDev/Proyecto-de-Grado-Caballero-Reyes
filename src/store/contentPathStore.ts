@@ -1,8 +1,14 @@
+import type { DirEntry } from "@tauri-apps/plugin-fs";
 import { create } from "zustand";
 
 interface File {
 	name: string;
 	content: string | null;
+}
+
+interface Folder {
+	name: string;
+	content: DirEntry[];
 }
 
 interface ContentPathState {
@@ -14,10 +20,10 @@ interface ContentPathState {
 	removeFileName: (name: string) => void;
 
 	foldersNames: string[];
-	selectedFolder: string | null;
+	selectedFolder: Folder | null;
 	addFolderName: (name: string) => void;
 	setFoldersNames: (names: string[]) => void;
-	setSelectedFolder: (folder: string | null) => void;
+	setSelectedFolder: (folder: Folder | null) => void;
 	removeFolderName: (name: string) => void;
 
 	pathMain: string | null;
@@ -39,13 +45,13 @@ export const useContentPathStore = create<ContentPathState>((set) => ({
 		})),
 
 	foldersNames: [],
-	selectedFolder: null,
+	selectedFolder: null as Folder | null,
 	addFolderName: (name) =>
 		set((state) => ({
 			foldersNames: [...state.foldersNames, name],
 		})),
 	setFoldersNames: (names) => set({ foldersNames: names }),
-	setSelectedFolder: (folder) => set({ selectedFolder: folder }),
+	setSelectedFolder: (folder: Folder | null) => set({ selectedFolder: folder }),
 	removeFolderName: (name) =>
 		set((state) => ({
 			foldersNames: state.foldersNames.filter((n) => n !== name),

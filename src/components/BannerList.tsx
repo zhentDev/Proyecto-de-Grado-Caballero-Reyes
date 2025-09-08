@@ -2,7 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import { readDir, watch } from "@tauri-apps/plugin-fs";
 import { useEffect } from "react";
 import { useContentPathStore } from "../store/contentPathStore";
-import FileItem from "./FileItem";
+import TreeItem from "./TreeItem/TreeItem";
 
 function BannerList() {
 	const setFilesNames = useContentPathStore((state) => state.setFilesNames);
@@ -73,7 +73,7 @@ function BannerList() {
 					.filter((name) => name !== null);
 				setFoldersNames(folderNames);
 			} catch (error) {
-				console.error("Error al leer el directorio:", error);
+				console.error("Error al leer el contenido del directorio:", error);
 			}
 		}
 		loadFilesFolders();
@@ -97,17 +97,47 @@ function BannerList() {
 	}, [path, setFilesNames, setFoldersNames]);
 
 	return (
-		<div>
-			<ul>
-				{foldersNames.map((folder) => (
-					<FileItem key={folder} item={folder} />
-				))}
-			</ul>
-			<ul>
-				{filesNames.map((file) => (
-					<FileItem key={file} item={file} />
-				))}
-			</ul>
+		<div className="h-full overflow-y-auto tree-container">
+			{/* Renderizar todos los items usando TreeItem */}
+			{path && (
+				<div className="space-y-1 p-2">
+					{/* Primero las carpetas */}
+					{foldersNames.map((folderName) => {
+						const folderEntry = {
+							name: folderName,
+							isFile: false,
+							isDirectory: true,
+							isSymlink: false // Asumiendo que no es symlink, ajusta si es necesario
+						};
+						return (
+							<TreeItem
+								key={folderName}
+								item={folderEntry}
+								currentPath={path}
+								level={0}
+							/>
+						);
+					})}
+
+					{/* Luego los archivos */}
+					{filesNames.map((fileName) => {
+						const fileEntry = {
+							name: fileName,
+							isFile: true,
+							isDirectory: false,
+							isSymlink: false // Asumiendo que no es symlink, ajusta si es necesario
+						};
+						return (
+							<TreeItem
+								key={fileName}
+								item={fileEntry}
+								currentPath={path}
+								level={0}
+							/>
+						);
+					})}
+				</div>
+			)}
 		</div>
 	);
 }

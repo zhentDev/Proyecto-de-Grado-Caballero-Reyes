@@ -3,7 +3,7 @@ use std::{fs, path::Path};
 use tauri::command;
 
 #[derive(serde::Serialize)]
-pub struct FolderItem {
+pub struct Item {
 	pub name: String,
 	pub path: String,
 	pub is_file: bool,
@@ -20,7 +20,7 @@ pub async fn open_folder_dialog() -> Result<String, String> {
 }
 
 #[command]
-pub fn get_folder_contents(path: String) -> Result<Vec<FolderItem>, String> {
+pub fn get_folder_contents(path: String) -> Result<Vec<Item>, String> {
 	let dir = Path::new(&path);
 	if !dir.is_dir() {
 		return Err("La ruta no es un directorio válido".into());
@@ -31,7 +31,7 @@ pub fn get_folder_contents(path: String) -> Result<Vec<FolderItem>, String> {
 		.map(|entry| {
 			let entry = entry.map_err(|e| e.to_string())?;
 			let path: std::path::PathBuf = entry.path();
-			Ok(FolderItem {
+			Ok(Item {
 				name: entry.file_name().to_string_lossy().into_owned(),
 				path: path.to_string_lossy().into_owned(),
 				is_file: path.is_file(),

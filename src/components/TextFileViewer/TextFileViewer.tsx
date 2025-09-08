@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "./TextFileViewer.scss";
 import { listen } from "@tauri-apps/api/event";
 import { ResizeTable } from "../../config/resizeTable";
+import toast from "react-hot-toast";
 
 interface TextFileViewerProps {
 	path: string;
@@ -58,7 +59,7 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 			}
 		};
 
-		setupWatcher();
+		// setupWatcher();
 
 		// Limpieza de eventos al desmontar el componente
 		return () => {
@@ -115,18 +116,49 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 			resizeInstance.current = new ResizeTable();
 		}
 
+		console.log(logData);
 		return () => {
 			if (resizeInstance.current) {
 				// Limpiar si es necesario
 				resizeInstance.current = null;
 			}
 		};
+
 	}, [logData]);
 
 	useEffect(() => {
 		if (containerRef.current) {
 			containerRef.current.scrollTop = containerRef.current.scrollHeight;
 		}
+	}, []);
+
+	useEffect(() => {
+		const handleMouseUp = () => {
+			const selection = window.getSelection();
+			const selectedText = selection?.toString().trim();
+
+			if (selectedText) {
+				navigator.clipboard.writeText(selectedText).then(() => {
+					console.log("Texto seleccionado copiado");
+					selection?.removeAllRanges(); // Deselecciona el texto
+				});
+				toast.success("Texto seleccionado copiado", {
+					duration: 2000,
+					position: "bottom-right",
+					style: {
+						background: "#0fff2a",
+						color: "#000",
+					},
+					iconTheme: { primary: "#fff", secondary: "#0f002a" },
+					className: "animate-slide-in-right bg-gray-800 text-white px-4 py-2 rounded shadow-lg",
+				});
+			}
+		};
+
+		document.addEventListener("mouseup", handleMouseUp);
+		return () => {
+			document.removeEventListener("mouseup", handleMouseUp);
+		};
 	}, []);
 
 	if (loading) return <div>Loading...</div>;
@@ -139,18 +171,40 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 		}
 	});
 
+	const handleRightClick = (e: React.MouseEvent<HTMLDivElement>) => {
+		e.preventDefault(); // Evita que aparezca el menú contextual
+		const text = e.currentTarget.innerText;
+		navigator.clipboard.writeText(text).then(() => {
+			console.log("Texto copiado con clic derecho");
+		});
+		toast.success("Texto copiado", {
+			duration: 2000,
+			position: "bottom-right",
+			style: {
+				background: "#0fff2a",
+				color: "#000",
+			},
+			iconTheme: { primary: "#fff", secondary: "#0faa2a" },
+			className: "animate-slide-in-right bg-green-700 text-white px-4 py-2 rounded shadow-lg",
+		});
+	};
+
 	return (
-		<div className="w-full h-full" ref={containerRef} style={{ overflowY: "auto" }}>
+		<div className="w-full h-full overflow-auto" ref={containerRef} style={{ overflowY: "auto" }}>
 			<main className="w-full h-full">
 				<section className="w-full h-full">
-					<table ref={tableRef} className="select-none table w-full text-sm">
+					<table ref={tableRef} className="table w-full text-sm responsive-log-table">
+						<colgroup>
+							<col className="col-index" />
+							<col className="col-type" />
+							<col className="col-description" />
+						</colgroup>
 						<thead>
 							<tr>
 								{headers.map((header, index) => (
 									<th
 										key={header}
-										className={`text-left px-4 py-2 ${classes[index]}`}
-										style={{ width: "auto" }}
+										className={`text-right px-4 py-2 ${classes[index]}`}
 									>
 										{header}
 									</th>
@@ -171,22 +225,24 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 								}
 								return (
 									<tr key={rowKey}>
-										<th className="p-1">{i + 1}</th>
+										<th className="p-1 font-normal text-lg select-none">{i + 1}</th>
 										{displayRow.map((item, j) =>
 											regexInicio.test(row[2]) || regexFin.test(row[2]) ? (
-												<td
+												<th
 													key={`${rowKey}_${j}_${item}`}
-													className={`px-4 py-2 border ${classes[j + 1]} WARN`}
+													className={`px-2 py-1 border whitespace-normal break-words overflow-hidden font-normal text-lg ${classes[j + 1]} WARN cursor-pointer row text-black`}
+													onContextMenu={handleRightClick}
 												>
 													{item}
-												</td>
+												</th>
 											) : (
-												<td
+												<th
 													key={`${rowKey}_${j}_${item}`}
-													className={`px-4 py-2 border-b ${classes[j + 1]} ${row[0]}`}
+													className={`px-2 py-1 border-b whitespace-normal break-words font-normal text-lg ${classes[j + 1]} ${row[0]} cursor-pointer row`}
+													onContextMenu={handleRightClick}
 												>
 													{item}
-												</td>
+												</th>
 											),
 										)}
 									</tr>

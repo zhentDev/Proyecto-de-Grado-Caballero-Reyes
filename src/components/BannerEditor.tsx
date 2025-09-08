@@ -18,16 +18,25 @@ function BannerEditor({ separator }: { separator: string }) {
 			setText("");
 			return;
 		}
-		console.log(text);
+		
+		// Solo inicializar el texto para archivos que NO sean .txt
+		if (!selectedFile.name.toLowerCase().endsWith(".txt")) {
+			setText(selectedFile.content || "");
+		}
+	}, [selectedFile]); // Remover 'text' de las dependencias para evitar bucles
 
+	// UseEffect separado para manejar cambios en el texto (auto-guardado)
+	useEffect(() => {
+		if (!selectedFile || selectedFile.name.toLowerCase().endsWith(".txt")) {
+			return; // No hacer nada para archivos .txt
+		}
+
+		// Aquí iría la lógica de auto-guardado si está habilitada
 		// const saveText = setTimeout(async () => {
 		// 	await writeTextFile(`${path}\\${selectedFile.name}`, text ?? "");
 		// }, 1000);
-
-		// return () => {
-		// 	clearTimeout(saveText);
-		// };
-	}, [text, selectedFile]);
+		// return () => clearTimeout(saveText);
+	}, [text, selectedFile, path]);
 
 	const pathComplete = path ? `${path}\\${selectedFile?.name}` : "";
 

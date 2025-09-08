@@ -3,8 +3,8 @@ import { readTextFile, remove } from "@tauri-apps/plugin-fs";
 import toast from "react-hot-toast";
 import { FiTrash, FiX } from "react-icons/fi";
 import { twMerge } from "tailwind-merge";
-import { useContentPathStore } from "../store/contentPathStore";
-import FileIcon from "./HandleIcons";
+import { useContentPathStore } from "../../store/contentPathStore";
+import FileIcon from "../HandleIcons";
 
 interface BannerFormProps {
 	item: string;
@@ -75,9 +75,9 @@ function FileItem({ item }: BannerFormProps) {
 				}
 			}}
 		>
-			<div className="justify-between flex items-center gap-2">
+			<div className="flex flex-row max-w-max justify-center items-center gap-1.5">
 				<FileIcon item={item} />
-				<h1>{item}</h1>
+				<h1 className="pl-1 text-sm">{item}</h1>
 			</div>
 
 			{selectedFile?.name === item && (
