@@ -6,33 +6,40 @@
     "core:default",
     "opener:default",
     "fs:default",
+    "core:path:default",
     "dialog:default",
+    "fs:allow-watch",
+    "fs:allow-unwatch",
+    "sql:default",
+    "sql:allow-execute",
     {
       "allow": [
         {
-          "path": "D:/RPA/AA/PoC 2/"
+          "path": "D:/RPA/AA/PoC 1/**/*"
         }
       ],
       "identifier": "fs:allow-write-text-file"
     },
     {
       "allow": [
+        "**/*",
         {
-          "path": "D:/RPA/AA/PoC 1/"
+          "path": "D:/RPA/AA/PoC 1/**/*"
         }
       ],
-      "identifier": "fs:allow-write-text-file"
+      "identifier": "fs:scope",
+      "requireLiteralLeadingDot": false
     },
     {
       "allow": [
         {
-          "path": ""
+          "path": "D:/RPA/AA/PoC 1/**/*"
         }
       ],
-      "identifier": "fs:allow-write-text-file"
+      "identifier": "fs:allow-remove"
     }
   ],
   "windows": [
-    "main"
+    "*"
   ]
 }

@@ -1,0 +1,203 @@
+main {
+    display: grid;
+    place-items: center;
+    height: 100%;
+
+    table {
+        font-family: "Inter", sans-serif;
+        border-collapse: collapse;
+        font-size: 14px;
+        box-sizing: border-box;
+        width: 100%;
+        table-layout: fixed;
+        /* Volver a fixed para que funcione el resize manual */
+
+
+        tr {
+            background-color: #1f2327;
+            color: white;
+            font-size: 19.5px;
+            text-align: start;
+
+
+            &:nth-child(2n+1) {
+                background-color: #25333d;
+            }
+
+            .INFO {
+                background: #50774c;
+            }
+
+            .WARN {
+                background: #f0c674;
+            }
+
+            .ERROR {
+                background: #cc6666;
+            }
+
+            td {
+                padding: 8px 16px;
+                text-align: start;
+
+            }
+        }
+
+        thead {
+            tr {
+                th {
+                    box-sizing: border-box;
+                    padding: 8px 16px;
+                    text-align: start;
+                    min-width: 9px;
+                    user-select: none;
+                    background-color: #1f2327;
+                    position: sticky;
+                    top: 0;
+                    z-index: 2;
+
+                    &.resizing {
+                        &>div {
+                            border-right: 4px solid #4c6477;
+                        }
+                    }
+
+                    .grip {
+                        content: "&nbsp;";
+                        position: absolute;
+                        bottom: 0;
+                        right: 0;
+                        width: 8px;
+                        cursor: col-resize;
+                    }
+                }
+            }
+        }
+
+        tbody {
+            tr {
+                width: 100%;
+
+                td {
+                    position: relative;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+
+                    &.resizing {
+                        &>div {
+                            border-right: 4px solid #4c6477;
+                        }
+                    }
+
+                    .grip {
+                        content: "&nbsp;";
+                        position: absolute;
+                        bottom: 0;
+                        right: 0;
+                        width: 8px;
+                        cursor: col-resize;
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* Estilos responsivos para las columnas */
+.responsive-log-table {
+
+    /* Configuración base para escritorio - funciona con table-layout: fixed */
+    .col-index {
+        width: 8%;
+    }
+
+    .col-type {
+        width: 20%;
+    }
+
+    .col-description {
+        width: 72%;
+    }
+}
+
+/* Tablets */
+@media (max-width: 1024px) {
+    .responsive-log-table {
+        .col-index {
+            width: 10%;
+            min-width: 45px;
+        }
+
+        .col-type {
+            width: 25%;
+            min-width: 80px;
+        }
+
+        .col-description {
+            width: 65%;
+            min-width: 150px;
+        }
+    }
+}
+
+/* Móviles grandes */
+@media (max-width: 768px) {
+    .responsive-log-table {
+        font-size: 12px;
+
+        .col-index {
+            width: 12%;
+            min-width: 40px;
+        }
+
+        .col-type {
+            width: 30%;
+            min-width: 70px;
+        }
+
+        .col-description {
+            width: 58%;
+            min-width: 120px;
+        }
+
+        td,
+        th {
+            padding: 6px 8px;
+            font-size: 12px;
+        }
+    }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+    .responsive-log-table {
+        font-size: 11px;
+
+        .col-index {
+            width: 15%;
+            min-width: 35px;
+        }
+
+        .col-type {
+            width: 25%;
+            min-width: 50px;
+        }
+
+        .col-description {
+            width: 60%;
+            min-width: 100px;
+        }
+
+        td,
+        th {
+            padding: 4px 6px;
+            font-size: 11px;
+        }
+
+        thead th {
+            font-size: 12px;
+            font-weight: bold;
+        }
+    }
+}
