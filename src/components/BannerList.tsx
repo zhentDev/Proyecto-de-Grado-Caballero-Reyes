@@ -30,7 +30,6 @@ function BannerList() {
 		}
 		loadFilesFolders();
 
-		console.log("WATCHING");
 		let unwatch: (() => void) | undefined;
 
 		const startWatching = async () => {
@@ -39,12 +38,11 @@ function BannerList() {
 				unwatch = await watch(
 					path,
 					(event) => {
-						console.log(`Cambio detectado: ${event.type} en ${event.paths}`);
 						loadFilesFolders();
 					},
 					{ delayMs: 100 },
 				);
-				console.log("WATCHING", unwatch);
+
 			} catch (error) {
 				console.error("Error al observar el directorio:", error);
 			}
@@ -82,7 +80,6 @@ function BannerList() {
 
 		const listenFileChange = async () => {
 			unlisten = await listen("file-change", (event) => {
-				console.log("Evento recibido desde el backend:", event);
 				loadFilesFolders();
 			});
 		};
@@ -107,7 +104,7 @@ function BannerList() {
 							name: folderName,
 							isFile: false,
 							isDirectory: true,
-							isSymlink: false // Asumiendo que no es symlink, ajusta si es necesario
+							isSymlink: false, // Asumiendo que no es symlink, ajusta si es necesario
 						};
 						return (
 							<TreeItem
@@ -125,7 +122,7 @@ function BannerList() {
 							name: fileName,
 							isFile: true,
 							isDirectory: false,
-							isSymlink: false // Asumiendo que no es symlink, ajusta si es necesario
+							isSymlink: false, // Asumiendo que no es symlink, ajusta si es necesario
 						};
 						return (
 							<TreeItem

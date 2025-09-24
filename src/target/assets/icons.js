@@ -12,10 +12,10 @@
 	}
 
 	function updateUseElements() {
-		document.querySelectorAll("use").forEach((el) => {
+		for (const el of document.querySelectorAll("use")) {
 			if (el.getAttribute("href").includes("#icon-")) {
 				el.setAttribute("href", el.getAttribute("href").replace(/.*#/, "#"));
 			}
-		});
+		}
 	}
 })();

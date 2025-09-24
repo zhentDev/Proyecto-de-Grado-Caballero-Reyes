@@ -19,8 +19,8 @@ export class ResizeTable {
 		const tableHeaders =
 			document.querySelectorAll<HTMLTableCellElement>("thead th");
 
-		tableHeaders.forEach((th: HTMLTableCellElement) => {
-			if (th.textContent === "" || th.textContent === "Tipo") return;
+		for (const th of tableHeaders) {
+			if (th.textContent === "" || th.textContent === "Tipo") continue;
 
 			const grip = document.createElement("div");
 			const table = document.querySelector("table"); //revisar si es necesario
@@ -56,7 +56,7 @@ export class ResizeTable {
 					{ once: true },
 				);
 			});
-		});
+		}
 	}
 
 	private resizeColumn(e: MouseEvent): void {

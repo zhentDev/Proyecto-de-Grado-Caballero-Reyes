@@ -12,8 +12,8 @@ window.translations = {
 	var le = Object.defineProperty;
 	var Fe = Object.getOwnPropertyDescriptor;
 	var Ne = Object.getOwnPropertyNames;
-	var Ve = Object.getPrototypeOf,
-		Be = Object.prototype.hasOwnProperty;
+	var Ve = Object.getPrototypeOf;
+	var Be = Object.prototype.hasOwnProperty;
 	var qe = (t, e) => () => (
 		e || t((e = { exports: {} }).exports, e), e.exports
 	);

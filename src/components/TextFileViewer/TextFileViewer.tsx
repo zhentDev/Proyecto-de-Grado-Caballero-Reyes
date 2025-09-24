@@ -2,8 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./TextFileViewer.scss";
 import { listen } from "@tauri-apps/api/event";
-import { ResizeTable } from "../../config/resizeTable";
 import toast from "react-hot-toast";
+import { ResizeTable } from "../../config/resizeTable";
 
 interface TextFileViewerProps {
 	path: string;
@@ -39,21 +39,15 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 		}, 500);
 	}, [path, delimiter, isEditing]);
 
-	listen("file-change", (event) => {
-		console.log("File changed:", event.payload);
-	});
+	listen("file-change", (event) => { });
 
 	useEffect(() => {
 		let unlistenFileChange: Promise<() => void> | null = null;
 
 		const setupWatcher = async () => {
 			try {
-				unlistenFileChange = listen("file-change", () => {
-					console.log("Archivo modificado");
-					// Actualizar la lista de archivos o procesar el nuevo contenido
-				});
+				unlistenFileChange = listen("file-change", () => { });
 				await invoke("watch_file", { path });
-				console.log("Watcher iniciado");
 			} catch (err) {
 				console.error("Error iniciando watcher:", err);
 			}
@@ -79,7 +73,6 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 		const loadData = async () => {
 			try {
 				// Capturar ambos valores desde la función en Rust
-				console.log("Cargando archivo:", path);
 				const [data, maquina]: [string[][], string | null] = await invoke(
 					"process_log_file",
 					{
@@ -116,14 +109,12 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 			resizeInstance.current = new ResizeTable();
 		}
 
-		console.log(logData);
 		return () => {
 			if (resizeInstance.current) {
 				// Limpiar si es necesario
 				resizeInstance.current = null;
 			}
 		};
-
 	}, [logData]);
 
 	useEffect(() => {
@@ -139,7 +130,6 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 
 			if (selectedText) {
 				navigator.clipboard.writeText(selectedText).then(() => {
-					console.log("Texto seleccionado copiado");
 					selection?.removeAllRanges(); // Deselecciona el texto
 				});
 				toast.success("Texto seleccionado copiado", {
@@ -150,7 +140,8 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 						color: "#000",
 					},
 					iconTheme: { primary: "#fff", secondary: "#0f002a" },
-					className: "animate-slide-in-right bg-gray-800 text-white px-4 py-2 rounded shadow-lg",
+					className:
+						"animate-slide-in-right bg-gray-800 text-white px-4 py-2 rounded shadow-lg",
 				});
 			}
 		};
@@ -174,9 +165,7 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 	const handleRightClick = (e: React.MouseEvent<HTMLDivElement>) => {
 		e.preventDefault(); // Evita que aparezca el menú contextual
 		const text = e.currentTarget.innerText;
-		navigator.clipboard.writeText(text).then(() => {
-			console.log("Texto copiado con clic derecho");
-		});
+		navigator.clipboard.writeText(text).then(() => { });
 		toast.success("Texto copiado", {
 			duration: 2000,
 			position: "bottom-right",
@@ -185,15 +174,23 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 				color: "#000",
 			},
 			iconTheme: { primary: "#fff", secondary: "#0faa2a" },
-			className: "animate-slide-in-right bg-green-700 text-white px-4 py-2 rounded shadow-lg",
+			className:
+				"animate-slide-in-right bg-green-700 text-white px-4 py-2 rounded shadow-lg",
 		});
 	};
 
 	return (
-		<div className="w-full h-full overflow-auto" ref={containerRef} style={{ overflowY: "auto" }}>
+		<div
+			className="w-full h-full overflow-auto"
+			ref={containerRef}
+			style={{ overflowY: "auto" }}
+		>
 			<main className="w-full h-full">
 				<section className="w-full h-full">
-					<table ref={tableRef} className="table w-full text-sm responsive-log-table">
+					<table
+						ref={tableRef}
+						className="table w-full text-sm responsive-log-table"
+					>
 						<colgroup>
 							<col className="col-index" />
 							<col className="col-type" />
@@ -220,12 +217,16 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
 									displayRow = [
 										row[0],
 										row[1],
-										row.slice(2).join(" "), // une desde la segunda columna en adelante
+										row
+											.slice(2)
+											.join(" "), // une desde la segunda columna en adelante
 									];
 								}
 								return (
 									<tr key={rowKey}>
-										<th className="p-1 font-normal text-lg select-none">{i + 1}</th>
+										<th className="p-1 font-normal text-lg select-none">
+											{i + 1}
+										</th>
 										{displayRow.map((item, j) =>
 											regexInicio.test(row[2]) || regexFin.test(row[2]) ? (
 												<th

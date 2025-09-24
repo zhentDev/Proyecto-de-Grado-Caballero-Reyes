@@ -19,7 +19,6 @@ function ProyectsList() {
 		const setup = async () => {
 			try {
 				await createTables();
-				console.log("Tables created");
 			} catch (error) {
 				console.error("Error creating tables:", error);
 			}
@@ -29,7 +28,7 @@ function ProyectsList() {
 		setup();
 	}, []);
 
-	function handlerSelectProyect(event: React.MouseEvent<HTMLLIElement>) {
+	function handlerSelectProyect(event: React.MouseEvent<HTMLButtonElement>) {
 		if (!event.currentTarget.textContent) return;
 		const fetchProyect = async () => {
 			try {
@@ -40,7 +39,6 @@ function ProyectsList() {
 				}
 				const data = await getProyect(textContent);
 				const proyectData = data as Proyect[];
-				console.log("proyecto seleccionado:", proyectData[0].path);
 				navigate("/editor", { state: { path: proyectData[0].path } });
 				setFoldersNames([proyectData[0].path]);
 			} catch (error) {
@@ -56,8 +54,14 @@ function ProyectsList() {
 			<div className="gap-2 justify-center items-center h-full p-4 bg-gray-700 rounded-lg overflow-y-auto">
 				<ul className="justify-center items-center flex flex-col gap-2">
 					{proyects.map((user) => (
-						<li key={user.id} onClick={handlerSelectProyect}>
-							{user.name}
+						<li key={user.id}>
+							<button
+								type="button"
+								onClick={(e) => handlerSelectProyect(e)}
+								className="w-full text-left p-2 hover:bg-gray-600 rounded"
+							>
+								{user.name}
+							</button>
 						</li>
 					))}
 				</ul>

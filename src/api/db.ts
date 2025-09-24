@@ -28,7 +28,6 @@ export async function createTables() {
 		"SELECT name FROM sqlite_master WHERE type='table' AND name='users'",
 	);
 	if (proyectsResult.length > 0 && result.length > 0) {
-		console.log("Table 'proyects' y 'users' already exists");
 		// Return response if table already exists
 		return { message: "Table already exists" };
 	}
@@ -38,7 +37,6 @@ export async function deleteProyect(name: string) {
 	const db = await Database.load("sqlite:database.sqlite");
 	// await db.execute("DELETE FROM proyects WHERE name = ?", [name]);
 	await db.execute("DELETE FROM proyects;");
-	console.log(`Proyect ${name} deleted`);
 }
 
 export async function getProyects() {
@@ -67,7 +65,6 @@ export async function validateProyectExists() {
 		path: string;
 		separator: string;
 	}>;
-	console.log(typedResult[0].path, typedResult[0].separator);
 	if (typedResult[0].hasTrue === 1) {
 		return {
 			path: typedResult[0].path,

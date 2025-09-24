@@ -13,9 +13,7 @@ export class ResizeLayout {
 		const menu = document.getElementsByClassName("menu")[0];
 
 		const grip = document.createElement("div");
-		grip.style.height =
-			document.getElementsByClassName("container-layout")[0].clientHeight +
-			"px";
+		grip.style.height = `${document.getElementsByClassName("container-layout")[0].clientHeight}px`;
 		grip.classList.add("gripLayout");
 
 		const child = menu.querySelector(".gripLayout");
@@ -41,8 +39,7 @@ export class ResizeLayout {
 
 	private ResizeMenu(e: MouseEvent): void {
 		if (this.menuResizing) {
-			this.menuResizing.style.minWidth =
-				this.menuResizingOffset + e.pageX + "px";
+			this.menuResizing.style.minWidth = `${this.menuResizingOffset + e.pageX}px`;
 			this.menuResizingOffset = this.menuResizing.clientWidth - e.pageX;
 			if (this.menuResizingOffset + e.pageX >= 245) {
 				document.removeEventListener("mousemove", this.ResizeMenu);

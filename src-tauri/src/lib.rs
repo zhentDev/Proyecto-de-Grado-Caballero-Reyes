@@ -31,6 +31,8 @@ pub fn run() {
 			process::watch::watch_file,
 			process::getpath::open_folder_dialog,
 			process::getpath::get_folder_contents,
+			process::excel::leer_excel,
+			process::excel::guardar_excel
 		])
 		.run(tauri::generate_context!())
 		.expect("error while running tauri application");

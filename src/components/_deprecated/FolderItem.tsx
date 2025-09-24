@@ -1,22 +1,26 @@
 import { join } from "@tauri-apps/api/path";
 import { readDir, remove } from "@tauri-apps/plugin-fs";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FiTrash } from "react-icons/fi";
+import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
 import { twMerge } from "tailwind-merge";
 import { useContentPathStore } from "../store/contentPathStore";
 import FolderIcon from "./HandleIcons";
-import { useState, useEffect } from "react";
 import FileIcon from "./HandleIcons";
-import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
 
 interface BannerFormProps {
 	item: string;
 }
 
 function FolderItem({ item }: BannerFormProps) {
-	const setSelectedFolder = useContentPathStore((state) => state.setSelectedFolder);
+	const setSelectedFolder = useContentPathStore(
+		(state) => state.setSelectedFolder,
+	);
 	const selectedFolder = useContentPathStore((state) => state.selectedFolder);
-	const removeFolderName = useContentPathStore((state) => state.removeFolderName);
+	const removeFolderName = useContentPathStore(
+		(state) => state.removeFolderName,
+	);
 	const path = useContentPathStore((state) => state.pathMain);
 	const [showContent, setShowContent] = useState(false);
 
@@ -85,7 +89,6 @@ function FolderItem({ item }: BannerFormProps) {
 					<h1>{item}</h1>
 				</div>
 				{selectedFolder?.name === item && (
-
 					<div className="">
 						<FiTrash
 							onClick={(e) => {
@@ -104,12 +107,20 @@ function FolderItem({ item }: BannerFormProps) {
 						<div className="mt-2">
 							<ul className="gap-2 flex flex-col">
 								{selectedFolder.content.map((entry) => (
-									<div className="flex flex-row max-w-max justify-center items-center gap-1.5 flex-nowrap" key={entry.name ?? "unknown"}>
-										{
-											selectedFolder.name === item ? <IoIosArrowForward /> : <IoIosArrowDown />
-										}
+									<div
+										className="flex flex-row max-w-max justify-center items-center gap-1.5 flex-nowrap"
+										key={entry.name ?? "unknown"}
+									>
+										{selectedFolder.name === item ? (
+											<IoIosArrowForward />
+										) : (
+											<IoIosArrowDown />
+										)}
 										<FileIcon item={entry.name} />
-										<li key={entry.name ?? "unknown"} className="flex pl-1 text-sm flex-nowrap">
+										<li
+											key={entry.name ?? "unknown"}
+											className="flex pl-1 text-sm flex-nowrap"
+										>
 											{entry.name ?? "Sin nombre"}
 										</li>
 									</div>

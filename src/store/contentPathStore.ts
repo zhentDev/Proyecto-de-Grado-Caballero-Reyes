@@ -15,9 +15,10 @@ interface Folder {
 interface ContentPathState {
 	filesNames: string[];
 	selectedFile: File | null;
+	selectedFilePath: string | null;
 	addFileName: (name: string) => void;
 	setFilesNames: (names: string[]) => void;
-	setSelectedFile: (file: File | null) => void;
+	setSelectedFile: (file: File | null, path?: string | null) => void;
 	removeFileName: (name: string) => void;
 
 	foldersNames: string[];
@@ -34,12 +35,14 @@ interface ContentPathState {
 export const useContentPathStore = create<ContentPathState>((set) => ({
 	filesNames: [],
 	selectedFile: null,
+	selectedFilePath: null,
 	addFileName: (name) =>
 		set((state) => ({
 			filesNames: [...state.filesNames, name],
 		})),
 	setFilesNames: (names) => set({ filesNames: names }),
-	setSelectedFile: (file) => set({ selectedFile: file }),
+	setSelectedFile: (file, path = null) =>
+		set({ selectedFile: file, selectedFilePath: path }),
 	removeFileName: (name) =>
 		set((state) => ({
 			filesNames: state.filesNames.filter((n) => n !== name),

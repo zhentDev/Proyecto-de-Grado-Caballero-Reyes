@@ -1,13 +1,22 @@
 import { join } from "@tauri-apps/api/path";
-import { readDir, readTextFile, remove, BaseDirectory } from "@tauri-apps/plugin-fs";
-import { useState, useEffect } from "react";
+import {
+	BaseDirectory,
+	readDir,
+	readTextFile,
+	remove,
+} from "@tauri-apps/plugin-fs";
+import type { DirEntry } from "@tauri-apps/plugin-fs";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FiTrash, FiX } from "react-icons/fi";
 import { IoIosArrowForward } from "react-icons/io";
 import { twMerge } from "tailwind-merge";
 import { useContentPathStore } from "../../store/contentPathStore";
-import FileIcon, { canOpenFile, getFileDescription, FolderIcon } from "../HandleIcons";
-import type { DirEntry } from "@tauri-apps/plugin-fs";
+import FileIcon, {
+	canOpenFile,
+	getFileDescription,
+	FolderIcon,
+} from "../HandleIcons";
 import "./TreeItem.css";
 
 interface TreeItemProps {
@@ -19,10 +28,14 @@ interface TreeItemProps {
 function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 	const setSelectedFile = useContentPathStore((state) => state.setSelectedFile);
 	const selectedFile = useContentPathStore((state) => state.selectedFile);
-	const setSelectedFolder = useContentPathStore((state) => state.setSelectedFolder);
+	const setSelectedFolder = useContentPathStore(
+		(state) => state.setSelectedFolder,
+	);
 	const selectedFolder = useContentPathStore((state) => state.selectedFolder);
 	const removeFileName = useContentPathStore((state) => state.removeFileName);
-	const removeFolderName = useContentPathStore((state) => state.removeFolderName);
+	const removeFolderName = useContentPathStore(
+		(state) => state.removeFolderName,
+	);
 
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [children, setChildren] = useState<DirEntry[]>([]);
@@ -34,9 +47,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 
 	// Log controlado para carpetas seleccionadas
 	useEffect(() => {
-		if (isFolder && selectedFolder?.name === itemName) {
-			console.log(`Carpeta "${itemName}" seleccionada:`, selectedFolder);
-		}
+		if (isFolder && selectedFolder?.name === itemName) { }
 	}, [selectedFolder, itemName, isFolder]);
 
 	const handleFileClick = async () => {
@@ -59,7 +70,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 		try {
 			const filePath = await join(currentPath, itemName);
 			const content = await readTextFile(filePath);
-			setSelectedFile({ name: itemName, content });
+			setSelectedFile({ name: itemName, content }, filePath);
 		} catch (error) {
 			console.error("Error al leer el archivo:", error);
 			toast.error("Error al leer el archivo", {
@@ -110,7 +121,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 	const handleDelete = async () => {
 		const itemType = isFile ? "archivo" : "carpeta";
 		const accept = await window.confirm(
-			`¿Estás seguro de eliminar ${isFile ? "el" : "la"} ${itemType}?`
+			`¿Estás seguro de eliminar ${isFile ? "el" : "la"} ${itemType}?`,
 		);
 
 		if (!accept) return;
@@ -127,14 +138,17 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 				setSelectedFolder(null);
 			}
 
-			toast.error(`${itemType.charAt(0).toUpperCase() + itemType.slice(1)} eliminado`, {
-				duration: 2000,
-				position: "bottom-right",
-				style: {
-					background: "#0f172a",
-					color: "#fff",
+			toast.error(
+				`${itemType.charAt(0).toUpperCase() + itemType.slice(1)} eliminado`,
+				{
+					duration: 2000,
+					position: "bottom-right",
+					style: {
+						background: "#0f172a",
+						color: "#fff",
+					},
 				},
-			});
+			);
 		} catch (error) {
 			console.error(`Error al eliminar ${itemType}:`, error);
 			toast.error(`Error al eliminar ${itemType}`, {
@@ -166,7 +180,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 			<div
 				className={twMerge(
 					"py-2 px-2 hover:bg-amber-500 hover:cursor-pointer relative select-none text-sm tree-item-container flex justify-between",
-					isSelected ? "bg-sky-950" : ""
+					isSelected ? "bg-sky-950" : "",
 				)}
 				style={indentStyle}
 				onClick={isFile ? handleClick : toggleExpansion}
@@ -181,11 +195,16 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 				}}
 			>
 				{/* Contenido principal - ocupa todo el ancho disponible menos el espacio para botones */}
-				<div className="flex items-center gap-2 min-w-0" style={{ paddingRight: isSelected ? '60px' : '0' }}>
+				<div
+					className="flex items-center gap-2 min-w-0"
+					style={{ paddingRight: isSelected ? "60px" : "0" }}
+				>
 					{/* Indicador de expansión para carpetas */}
 					{isFolder && (
-						<span className={`w-4 flex justify-center transition-transform duration-400 ${isExpanded ? 'rotate-90' : 'rotate-0'
-							}`}>
+						<span
+							className={`w-4 flex justify-center transition-transform duration-400 ${isExpanded ? "rotate-90" : "rotate-0"
+								}`}
+						>
 							{isLoading ? (
 								<span className="text-xs animate-pulse">...</span>
 							) : (
@@ -194,10 +213,12 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 						</span>
 					)}
 					{isFile && <span className="w-4" />} {/* Espaciador para archivos */}
-
 					{/* Icono del item */}
-					{isFile ? <FileIcon item={itemName} /> : <FolderIcon item={itemName} />}
-
+					{isFile ? (
+						<FileIcon item={itemName} />
+					) : (
+						<FolderIcon item={itemName} />
+					)}
 					{/* Nombre del item con truncamiento */}
 					<span
 						className="tree-item-text min-w-0 flex-1"
@@ -233,10 +254,10 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 			{/* Renderizado recursivo de los hijos con animación suave */}
 			{isFolder && (
 				<div
-					className={`tree-children transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+					className={`tree-children transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
 						}`}
 					style={{
-						transform: isExpanded ? 'translateY(0)' : 'translateY(-10px)',
+						transform: isExpanded ? "translateY(0)" : "translateY(-10px)",
 					}}
 				>
 					{isExpanded && children.length > 0 && (
