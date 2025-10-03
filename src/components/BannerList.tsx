@@ -1,4 +1,3 @@
-import { listen } from "@tauri-apps/api/event";
 import { readDir, watch } from "@tauri-apps/plugin-fs";
 import { useEffect } from "react";
 import { useContentPathStore } from "../store/contentPathStore";
@@ -28,6 +27,8 @@ function BannerList() {
 				console.error("Error al leer el directorio:", error);
 			}
 		}
+
+		// Carga inicial
 		loadFilesFolders();
 
 		let unwatch: (() => void) | undefined;
@@ -37,12 +38,12 @@ function BannerList() {
 			try {
 				unwatch = await watch(
 					path,
-					(event) => {
+					() => {
+						// Recarga la lista de archivos cuando algo cambia
 						loadFilesFolders();
 					},
-					{ delayMs: 100 },
+					{ recursive: true, delayMs: 100 }, // <-- MODO RECURSIVO
 				);
-
 			} catch (error) {
 				console.error("Error al observar el directorio:", error);
 			}
@@ -50,45 +51,10 @@ function BannerList() {
 
 		startWatching();
 
+		// Función de limpieza para detener el watcher cuando el componente se desmonta
 		return () => {
 			if (typeof unwatch === "function") {
 				unwatch();
-			}
-		};
-	}, [path, setFilesNames, setFoldersNames]);
-
-	useEffect(() => {
-		async function loadFilesFolders() {
-			if (!path) return;
-			try {
-				const result = await readDir(path);
-				const fileNames = result
-					.map((file) => (file.isFile ? file.name : null))
-					.filter((name) => name !== null);
-				setFilesNames(fileNames);
-				const folderNames = result
-					.map((folder) => (folder.isDirectory ? folder.name : null))
-					.filter((name) => name !== null);
-				setFoldersNames(folderNames);
-			} catch (error) {
-				console.error("Error al leer el contenido del directorio:", error);
-			}
-		}
-		loadFilesFolders();
-
-		let unlisten: (() => void) | undefined;
-
-		const listenFileChange = async () => {
-			unlisten = await listen("file-change", (event) => {
-				loadFilesFolders();
-			});
-		};
-
-		listenFileChange();
-
-		return () => {
-			if (typeof unlisten === "function") {
-				unlisten();
 			}
 		};
 	}, [path, setFilesNames, setFoldersNames]);

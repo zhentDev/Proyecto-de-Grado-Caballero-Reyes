@@ -1,18 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 type ExcelData = {
 	sheets: string[];
 	rows: string[][];
 };
 
-let idCounter = 0;
-const uniqueId = (prefix = "") => `${prefix}${idCounter++}`;
-
 const MIN_ROWS = 20;
-const MIN_COLS = 15;
-const CHAR_WIDTH = 9; // Increased from 8
-const MIN_COL_WIDTH = 100;
+const MIN_COLS = 5;
 
 function ExcelView({ path }: { path: string }) {
 	const [menuVisible, setMenuVisible] = useState(false);
@@ -22,7 +17,6 @@ function ExcelView({ path }: { path: string }) {
 	const [gridData, setGridData] = useState<string[][]>([]);
 	const [sheets, setSheets] = useState<string[]>([]);
 	const [activeSheet, setActiveSheet] = useState("");
-	const [colWidths, setColWidths] = useState<number[]>([]);
 
 	useEffect(() => {
 		if (path) {
@@ -37,43 +31,19 @@ function ExcelView({ path }: { path: string }) {
 			maxCols = Math.max(MIN_COLS, ...data.map((r) => r.length));
 		}
 
-		const newGrid: string[][] = Array.from({ length: rows }, () =>
-			Array.from({ length: maxCols }, () => "")
+		const newGrid: string[][] = Array.from({ length: rows }, (_, i) =>
+			Array.from({ length: maxCols }, (_, j) => data[i]?.[j] || "")
 		);
-
-		for (let i = 0; i < data.length; i++) {
-			for (let j = 0; j < data[i].length; j++) {
-				newGrid[i][j] = data[i][j];
-			}
-		}
 
 		setGridData(newGrid);
 	}, [data]);
-
-	useEffect(() => {
-		if (gridData.length === 0) return;
-
-		const newColWidths: number[] = [];
-		const numCols = gridData[0].length;
-
-		for (let j = 0; j < numCols; j++) {
-			let maxLen = 0;
-			for (let i = 0; i < gridData.length; i++) {
-				const cellLength = gridData[i][j]?.length || 0;
-				if (cellLength > maxLen) {
-					maxLen = cellLength;
-				}
-			}
-			newColWidths[j] = Math.max(MIN_COL_WIDTH, maxLen * CHAR_WIDTH + 24); // Increased padding
-		}
-		setColWidths(newColWidths);
-	}, [gridData]);
 
 	async function abrirExcel(filePath: string) {
 		try {
 			const res = await invoke<ExcelData>("leer_excel", { ruta: filePath });
 			setSheets(res.sheets || []);
-			setActiveSheet(res.sheets?.[0] || "");
+			const firstSheet = res.sheets?.[0] || "";
+			setActiveSheet(firstSheet);
 			setData(res.rows || []);
 		} catch (err) {
 			alert(`Error al abrir Excel: ${err}`);
@@ -95,7 +65,6 @@ function ExcelView({ path }: { path: string }) {
 
 	async function guardarExcel() {
 		try {
-			// Filter empty rows and columns before saving
 			const filteredData = data.filter((row) =>
 				row.some((cell) => cell && cell.trim() !== "")
 			);
@@ -116,20 +85,22 @@ function ExcelView({ path }: { path: string }) {
 		setMenuVisible(false);
 	}
 
-	function editarCelda(i: number, j: number, valor: string) {
-		console.log(`Editing cell (${i}, ${j}) with value:`, valor);
-		const newData = [...data];
-		while (newData.length <= i) {
-			newData.push([]);
-		}
-		const newRow = [...newData[i]];
-		while (newRow.length <= j) {
-			newRow.push("");
-		}
-		newRow[j] = valor;
-		newData[i] = newRow;
-		setData(newData);
-	}
+	const editarCelda = useCallback(
+		(i: number, j: number, valor: string) => {
+			setData((prevData) => {
+				const newData = prevData.map((row) => [...row]);
+				while (newData.length <= i) {
+					newData.push([]);
+				}
+				while (newData[i].length <= j) {
+					newData[i].push("");
+				}
+				newData[i][j] = valor;
+				return newData;
+			});
+		},
+		[]
+	);
 
 	function agregarColumna() {
 		const newGrid = gridData.map((fila) => [...fila, ""]);
@@ -146,7 +117,7 @@ function ExcelView({ path }: { path: string }) {
 
 	return (
 		<div
-			className="p-4 bg-[#1f2327] text-white h-full flex flex-col"
+			className="p-4 bg-[#1f2327] text-white h-full flex flex-col w-full"
 			onClick={handleClick}
 			onKeyDown={(e) => {
 				if (e.key === "Enter" || e.key === " ") {
@@ -178,25 +149,35 @@ function ExcelView({ path }: { path: string }) {
 			</div>
 
 			<div className="overflow-auto flex-grow">
-				<table className="border-collapse" onContextMenu={handleContextMenu}>
-					<colgroup>
-						{colWidths.map((width, j) => (
-							<col key={uniqueId(`col-${j}`)} style={{ width: `${width}px` }} />
-						))}
-					</colgroup>
+				<table
+					className="border-collapse table-auto"
+					onContextMenu={handleContextMenu}
+				>
 					<tbody>
 						{gridData.map((row, i) => (
-							<tr key={uniqueId("row-")}>
+							<tr key={`row-${i}`}>
 								{row.map((cell, j) => (
 									<td
-										key={uniqueId("cell-")}
-										className="border border-slate-700 p-0 h-7"
+										key={`cell-${i}-${j}`}
+										className="border border-slate-700 p-0 h-6 min-w-[100px]"
 									>
-										<input
-											value={cell}
-											onChange={(e) => editarCelda(i, j, e.target.value)}
-											className="w-full h-full bg-transparent outline-none px-2"
-										/>
+										<div className="grid items-center h-full">
+											<span
+												className={`invisible whitespace-pre px-2 col-start-1 row-start-1 ${i === 0 ? "font-bold" : ""}`}>
+												{cell || " "}
+											</span>
+											<input
+												value={cell}
+												onChange={(e) => editarCelda(i, j, e.target.value)}
+												className={`[appearance:none] w-full h-full outline-none px-2 col-start-1 row-start-1 caret-white focus:ring-2 focus:ring-sky-500 ${
+													i === 0
+														? "bg-slate-800 font-bold text-white"
+														: i % 2 !== 0
+														? "bg-[#25333d]"
+														: "bg-transparent"
+												}`}
+											/>
+										</div>
 									</td>
 								))}
 							</tr>
