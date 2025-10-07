@@ -16,9 +16,7 @@ export async function getEnv(path: string | null) {
 	if (!path) return;
 	const normalizedPath = `${path.replace(/\\/g, "/")}/**/*`;
 
-	const a = await getFromRust(normalizedPath);
-	console.log(normalizedPath);
-	console.log(a);
+	await getFromRust(normalizedPath);
 
 	return normalizedPath;
 }

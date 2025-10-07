@@ -1,73 +1,50 @@
-use notify::{RecommendedWatcher, RecursiveMode, Watcher};
-use std::path::PathBuf;
-use std::sync::mpsc;
-use tauri::Emitter; // Asegúrate de importar Emitter aquí
+use sha2::{Digest, Sha256};
+use std::{fs, path::PathBuf, thread, time::Duration};
+use tauri::{Emitter, Window};
 
 #[tauri::command]
-pub async fn watch_file(path: String, window: tauri::Window) -> Result<(), String> {
-	let (tx, rx) = mpsc::channel();
+pub async fn watch_file(path: String, window: Window) -> Result<(), String> {
 	let path_buf = PathBuf::from(&path);
 
-	// Verificar si el archivo existe primero
 	if !path_buf.exists() {
-		return Err("El archivo no existe".into());
+		return Err("El archivo no existe.".into());
 	}
 
-	// Configuración más robusta del watcher
-	let mut watcher: RecommendedWatcher = Watcher::new(
-		tx,
-		notify::Config::default()
-			.with_poll_interval(std::time::Duration::from_secs(1))
-			.with_compare_contents(true), // Compara contenido, no solo metadata
-	)
-	.map_err(|e| format!("Error creando watcher: {}", e))?;
+	let canonical_path = std::fs::canonicalize(&path_buf)
+		.map_err(|e| format!("Error canonicalizando path: {}", e))?;
 
-	watcher
-		.watch(&path_buf, RecursiveMode::NonRecursive)
-		.map_err(|e| format!("Error observando archivo: {}", e))?;
-
-	// Notificar al frontend que el watcher está listo
+	// Emitir evento de que el watcher está listo
 	window
 		.emit(
 			"watcher-ready",
 			serde_json::json!({ "status": "ready", "path": path.clone() }),
 		)
-		.unwrap_or_else(|e| eprintln!("Error emitiendo evento: {}", e));
+		.unwrap_or_else(|e| eprintln!("Error emitiendo watcher-ready: {}", e));
 
-	std::thread::spawn(move || {
-		for res in rx {
-			match res {
-				Ok(event) => {
-					// Filtrar solo eventos relevantes de modificación
-					if let notify::EventKind::Modify(content) = event.kind {
-						match content {
-							notify::event::ModifyKind::Data(_) | notify::event::ModifyKind::Any => {
-								if let Some(path) = event.paths.first() {
-									if *path == path_buf {
-										if let Err(e) = window.emit("file-change", {}) {
-											// Si el error indica que el callback no se encontró,
-											// lo más probable es que la ventana se haya recargado.
-											if e.to_string().contains("Couldn't find callback") {
-												println!("La ventana fue recargada; dejando de emitir eventos.");
-												// Opcional: salir del ciclo y detener el hilo
-												break;
-											} else {
-												eprintln!("Error emitiendo evento: {}", e);
-											}
-										} else {
-											println!(
-												"Modificación detectada en: {}",
-												path.display()
-											);
-										}
-									}
-								}
-							}
-							_ => {}
-						}
+	// Lanzar hilo de polling por hash
+	let window = window.clone();
+	thread::spawn(move || {
+		let mut last_hash = None;
+
+		loop {
+			thread::sleep(Duration::from_secs(2));
+
+			match fs::read(&canonical_path) {
+				Ok(content) => {
+					let hash = Sha256::digest(&content);
+
+					if Some(hash.clone()) != last_hash {
+						last_hash = Some(hash);
+						let _ = window.emit("file-change", {});
+						println!(
+							"✅ Cambio detectado por hash en: {}",
+							canonical_path.display()
+						);
 					}
 				}
-				Err(e) => eprintln!("Error en watcher: {:?}", e),
+				Err(e) => {
+					eprintln!("Error leyendo archivo: {}", e);
+				}
 			}
 		}
 	});

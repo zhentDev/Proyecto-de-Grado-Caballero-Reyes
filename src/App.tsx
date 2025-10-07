@@ -17,7 +17,7 @@ function App() {
 	const setPathMain = useContentPathStore((state) => state.setPathMain);
 	let path: string | null = useContentPathStore((state) => state.pathMain);
 	const navigate = useNavigate();
-	const [delimiter, setDelimiter] = useState("")
+	const [delimiter, setDelimiter] = useState("");
 
 	useEffect(() => {
 		// If path is false, redirect to "/"
