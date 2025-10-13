@@ -7,9 +7,6 @@ import { ResizeTable } from "../../config/resizeTable";
 import type { LogEntries } from "../../utils/logParser";
 import { parseLogEntries } from "../../utils/logParser";
 import LogAnalysisViewer from "../LogViewer/LogAnalysisViewer";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { VirtualizedGrid } from "../LogViewer/VirtualizeLogGrid";
-("../LogViewer/VirtualizeLogGrid");
 
 interface TextFileViewerProps {
   path: string;
@@ -81,13 +78,6 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
   const headers = ["", "Tipo", "Fecha", "Descripción"];
   const classes = ["show", "hidden", "show", "show"];
   const timeoutRef = useRef<NodeJS.Timeout>();
-
-  const rowVirtualizer = useVirtualizer({
-    count: logData.length,
-    getScrollElement: () => containerRef.current,
-    estimateSize: () => 35, // Estimación inicial, ajústala si es necesario
-    overscan: 5,
-  });
 
   const debouncedReload = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -220,6 +210,8 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
     setDismissedNotifications(notifications.map((n) => n.id));
   };
 
+  if (loading) return <div>Loading...</div>;
+
   const getIndentStyle = (level: number) => {
     const basePadding = 8;
     const indentSize = level * 15;
@@ -242,7 +234,7 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
     return { textAlign: "left" as const, paddingLeft: `${basePadding}px` };
   };
 
-  const handleRightClick = (e: React.MouseEvent<HTMLTableCellElement>) => {
+  const handleRightClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     const text = e.currentTarget.innerText;
     navigator.clipboard.writeText(text).then(() => {});
@@ -253,11 +245,21 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
   };
 
   const handleEntryClick = (lineNumber: number) => {
-    // lineNumber es 1-based, el índice del virtualizador es 0-based
-    rowVirtualizer.scrollToIndex(lineNumber - 1, { align: "start" });
-  };
+    const row = tableRef.current?.querySelector<HTMLTableRowElement>(
+      `tr:nth-child(${lineNumber})`
+    );
+    const container = containerRef.current;
 
-  if (loading) return <div>Loading...</div>;
+    if (row && container) {
+      const rowHeight = row.offsetHeight;
+      const desiredScrollTop = row.offsetTop - rowHeight; // scroll to 1 line above
+
+      container.scrollTo({
+        top: desiredScrollTop,
+        behavior: "smooth",
+      });
+    }
+  };
 
   return (
     <div className="w-full h-full" style={{ position: "relative" }}>
@@ -369,19 +371,86 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
         </div>
       )}
 
-      <VirtualizedGrid
-        containerRef={containerRef}
-        tableRef={tableRef}
-        headers={headers}
-        classes={classes}
-        logData={logData}
-        rowVirtualizer={rowVirtualizer}
-        indentLevels={indentLevels}
-        getIndentStyle={getIndentStyle}
-        regexInicio={regexInicio}
-        regexFin={regexFin}
-        handleRightClick={handleRightClick}
-      />
+      <div
+        className="w-full h-full flex flex-col overflow-auto"
+        ref={containerRef}
+      >
+        <main className="w-full h-full flex items-stretch font-bold border-b-2 border-gray-600 text-lg shrink-0 bg-gray-800">
+          <section className="w-full h-full p-1 text-center text-gray-500">
+            <table
+              ref={tableRef}
+              className="table w-full text-sm responsive-log-table"
+            >
+              <colgroup>
+                <col className="col-index" />
+                <col className="col-type" />
+                <col className="col-description" />
+              </colgroup>
+              <thead>
+                <tr>
+                  {headers.map((header, index) => (
+                    <th
+                      key={header}
+                      className={`px-4 py-2 grow text-gray-500 ${classes[index]}`}
+                      style={{ flexBasis: "160px" }}
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              <tbody>
+                {logData.map((row, i) => {
+                  const rowKey = row.join("_") + i || `row_${i}`;
+                  let displayRow = row;
+                  if (row.length > 3) {
+                    displayRow = [row[0], row[1], row.slice(2).join(" ")];
+                  }
+                  const indent = indentLevels[i] || 0;
+
+                  return (
+                    <tr key={rowKey}>
+                      <th className="p-1 font-normal text-lg select-none">
+                        {i + 1}
+                      </th>
+                      {displayRow.map((item, j) => {
+                        const isDescription = j === 2;
+                        const content = item;
+                        const isTaskMarker =
+                          isDescription &&
+                          (regexInicio.test(item) || regexFin.test(item));
+
+                        const style: React.CSSProperties = isDescription
+                          ? getIndentStyle(indent)
+                          : { textAlign: "left" as const };
+                        if (isTaskMarker) {
+                          style.backgroundColor = "#3a536e"; // Color azul para marcadores de tarea
+                        }
+
+                        const baseClass = `px-2 py-1 border-b whitespace-normal break-words font-normal text-lg ${
+                          classes[j + 1]
+                        } ${row[0]} cursor-pointer row`;
+
+                        return (
+                          <th
+                            key={`${rowKey}_${j}_${item}`}
+                            className={baseClass}
+                            onContextMenu={handleRightClick}
+                            style={style}
+                          >
+                            {content}
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

@@ -8,8 +8,13 @@ import type { LogEntries } from "../../utils/logParser";
 import { parseLogEntries } from "../../utils/logParser";
 import LogAnalysisViewer from "../LogViewer/LogAnalysisViewer";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { VirtualizedGrid } from "../LogViewer/VirtualizeLogGrid";
 ("../LogViewer/VirtualizeLogGrid");
+import {
+  createColumnHelper,
+  useReactTable,
+  getCoreRowModel,
+} from "@tanstack/react-table";
+import { VirtualizedGrid } from "../LogViewer/VirtualizeLogGrid";
 
 interface TextFileViewerProps {
   path: string;
@@ -81,13 +86,6 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
   const headers = ["", "Tipo", "Fecha", "Descripción"];
   const classes = ["show", "hidden", "show", "show"];
   const timeoutRef = useRef<NodeJS.Timeout>();
-
-  const rowVirtualizer = useVirtualizer({
-    count: logData.length,
-    getScrollElement: () => containerRef.current,
-    estimateSize: () => 35, // Estimación inicial, ajústala si es necesario
-    overscan: 5,
-  });
 
   const debouncedReload = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -189,6 +187,10 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
     return () => document.removeEventListener("mouseup", handleMouseUp);
   }, []);
 
+  useEffect(() => {
+    setDismissedNotifications([]);
+  }, [logData]);
+
   const { levels: indentLevels, unclosedTasks } = useMemo(
     () => analyzeAndGetIndentations(logData),
     [logData]
@@ -204,10 +206,6 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
     [unclosedTasks]
   );
 
-  useEffect(() => {
-    setDismissedNotifications([]);
-  }, [logData]);
-
   const displayedNotifications = notifications.filter(
     (n) => !dismissedNotifications.includes(n.id)
   );
@@ -220,7 +218,7 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
     setDismissedNotifications(notifications.map((n) => n.id));
   };
 
-  const getIndentStyle = (level: number) => {
+  const getIndentStyle = useCallback((level: number): React.CSSProperties => {
     const basePadding = 8;
     const indentSize = level * 15;
     const totalPadding = basePadding + indentSize;
@@ -236,26 +234,121 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
       return {
         paddingLeft: `${totalPadding}px`,
         borderLeft: `3px solid ${color}`,
-        textAlign: "left" as const,
+        textAlign: "left",
       };
     }
-    return { textAlign: "left" as const, paddingLeft: `${basePadding}px` };
-  };
+    return { textAlign: "left", paddingLeft: `${basePadding}px` };
+  }, []); // Array vacío porque no depende de ningún prop o estado del componente
 
-  const handleRightClick = (e: React.MouseEvent<HTMLTableCellElement>) => {
-    e.preventDefault();
-    const text = e.currentTarget.innerText;
-    navigator.clipboard.writeText(text).then(() => {});
-    toast.success("Texto copiado", {
-      duration: 2000,
-      position: "bottom-right",
-    });
-  };
+  const handleRightClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const text = e.currentTarget.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        toast.success("Texto copiado", {
+          duration: 2000,
+          position: "bottom-right",
+        });
+      });
+    },
+    []
+  ); // Array vacío porque `toast` es una función importada estable
 
   const handleEntryClick = (lineNumber: number) => {
     // lineNumber es 1-based, el índice del virtualizador es 0-based
     rowVirtualizer.scrollToIndex(lineNumber - 1, { align: "start" });
   };
+
+  // Define las columnas DENTRO del componente para que accedan a la lógica
+  const columns = useMemo(() => {
+    type LogEntry = string[];
+    const columnHelper = createColumnHelper<LogEntry>();
+    const allColumns = [
+      columnHelper.display({
+        id: "index",
+        header: headers[0] || "Índice",
+        size: 60,
+        cell: (info) => (
+          <div
+            className="w-full h-full flex items-center justify-center text-gray-500 select-none"
+            onContextMenu={handleRightClick}
+          >
+            {info.row.index + 1}
+          </div>
+        ),
+      }),
+      columnHelper.accessor((row) => row[0], {
+        id: "type",
+        header: headers[1] || "Tipo",
+        size: 150,
+        cell: (info) => (
+          <div
+            className="w-full h-full flex items-center px-2"
+            onContextMenu={handleRightClick}
+          >
+            {info.getValue()}
+          </div>
+        ),
+      }),
+      columnHelper.accessor((row) => row[1], {
+        id: "timestamp",
+        header: headers[2] || "Fecha",
+        size: 200,
+        cell: (info) => (
+          <div
+            className="w-full h-full flex items-center px-2"
+            onContextMenu={handleRightClick}
+          >
+            {info.getValue()}
+          </div>
+        ),
+      }),
+      columnHelper.accessor((row) => row.slice(2).join(" "), {
+        id: "description",
+        header: headers[3] || "Descripción",
+        size: 0, // El tamaño 0 con grid 1fr hará que ocupe el resto
+        cell: (info) => {
+          const indentLevel = indentLevels[info.row.index] || 0;
+          const style = getIndentStyle(indentLevel);
+          const value = info.getValue();
+          const isTaskMarker = regexInicio.test(value) || regexFin.test(value);
+          if (isTaskMarker) {
+            style.backgroundColor = "#3a536e";
+          }
+
+          return (
+            <div
+              className="w-full h-full min-w-0 break-words py-2 flex items-center"
+              style={style}
+              onContextMenu={handleRightClick}
+            >
+              {value}
+            </div>
+          );
+        },
+      }),
+    ];
+    // Filtra las columnas basado en tu array de clases
+    return allColumns.filter((col, index) => classes[index] === "show");
+  }, [indentLevels, getIndentStyle, handleRightClick]); // Depende de logData para que se recalcule si cambia
+
+  const table = useReactTable({
+    data: logData,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  const rowVirtualizer = useVirtualizer({
+    count: logData.length,
+    getScrollElement: () => containerRef.current,
+    estimateSize: () => 75,
+    overscan: 5,
+    measureElement:
+      typeof window !== "undefined" &&
+      navigator.userAgent.indexOf("Firefox") === -1
+        ? (element) => element.getBoundingClientRect().height
+        : undefined,
+  });
 
   if (loading) return <div>Loading...</div>;
 
@@ -369,19 +462,133 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
         </div>
       )}
 
-      <VirtualizedGrid
-        containerRef={containerRef}
-        tableRef={tableRef}
-        headers={headers}
-        classes={classes}
-        logData={logData}
-        rowVirtualizer={rowVirtualizer}
-        indentLevels={indentLevels}
-        getIndentStyle={getIndentStyle}
-        regexInicio={regexInicio}
-        regexFin={regexFin}
-        handleRightClick={handleRightClick}
-      />
+      <div
+        className="w-full h-full flex flex-col overflow-auto"
+        ref={containerRef}
+      >
+        {/* <main>
+          <section
+            className="w-full h-full p-1 text-center text-gray-500 font-bold border-gray-600 shrink-0 bg-gray-800"
+            ref={containerRef}
+          >
+            <VirtualizedGrid table={table} rowVirtualizer={rowVirtualizer} />
+          </section>
+        </main> */}
+
+        <div
+          className="w-full h-full flex flex-col overflow-auto"
+          ref={containerRef}
+        >
+          <main className="w-full h-full flex items-stretch font-bold border-b-2 border-gray-600 text-lg shrink-0 bg-gray-800">
+            <section className="w-full h-full p-1 text-center text-gray-200">
+              <table
+                ref={tableRef}
+                className="table h-auto w-full text-sm responsive-log-table table-fixed"
+              >
+                <colgroup>
+                  <col className="col-index" />
+                  <col className="col-type" />
+                  <col className="col-description" />
+                  <col className="col-empty-1" />
+                  <col className="col-empty-2" />
+                  <col className="col-empty-3" />
+                  <col className="col-empty-4" />
+                  <col className="col-empty-5" />
+                  <col className="col-empty-6" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    {headers.map((header, index) => (
+                      <th
+                        key={header}
+                        className={`px-4 py-2 text-gray-500 ${classes[index]}`}
+                        style={{ width: "160px" }}
+                      >
+                        {header}
+                      </th>
+                    ))}
+                    <th className="hidden">.</th>
+                    <th className="hidden">.</th>
+                    <th className="hidden">.</th>
+                    <th className="hidden">.</th>
+                    <th className="hidden">.</th>
+                  </tr>
+                </thead>
+
+                <tbody
+                  style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    position: "relative",
+                    width: "100%",
+                  }}
+                >
+                  {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                    const i = virtualItem.index;
+                    const row = logData[i];
+                    const rowKey = row.join("_") + i || `row_${i}`;
+                    const indent = indentLevels[i] || 0;
+
+                    let displayRow = row;
+                    if (row.length > 3) {
+                      displayRow = [row[0], row[1], row.slice(2).join(" ")];
+                    }
+
+                    return (
+                      <tr
+                        key={rowKey}
+                        className="absolute top-0 left-0 w-full table table-fixed"
+                        style={{
+                          height: `${virtualItem.size}px`,
+                          transform: `translateY(${virtualItem.start}px)`,
+                        }}
+                      >
+                        <td className="p-1 font-normal text-lg select-none w-28 text-center align-middle border-b whitespace-normal break-words h-6 max-w-full min-w-0 text-wrap">
+                          {i + 1}
+                        </td>
+                        {displayRow.map((item, j) => {
+                          const isDescription = j === 2;
+                          const isTaskMarker =
+                            isDescription &&
+                            (regexInicio.test(item) || regexFin.test(item));
+
+                          const style: React.CSSProperties = isDescription
+                            ? getIndentStyle(indent)
+                            : { textAlign: "left" };
+
+                          if (isTaskMarker) {
+                            style.backgroundColor = "#3a536e";
+                          }
+
+                          const baseClass = `px-2 py-1 border-b font-normal text-lg break-words whitespace-normal align-top max-w-full min-w-0 ${
+                            classes[j + 1]
+                          } ${row[0]} cursor-pointer row`;
+
+                          return (
+                            <td
+                              key={`${rowKey}_${j}_${item}`}
+                              className={baseClass}
+                              onContextMenu={handleRightClick}
+                              style={style}
+                              colSpan={j === 1 ? 2 : 8}
+                            >
+                              {item}
+                            </td>
+                          );
+                        })}
+                        <td className="hidden"></td>
+                        <td className="hidden"></td>
+                        <td className="hidden"></td>
+                        <td className="hidden"></td>
+                        <td className="hidden"></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </section>
+          </main>
+        </div>
+      </div>
     </div>
   );
 }

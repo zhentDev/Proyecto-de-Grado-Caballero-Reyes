@@ -21,7 +21,6 @@ export const FormProyects = ({ onFolderSelected }: FormProyectsProps) => {
   useEffect(() => {
     if (selectedPath) {
       setPathMain(selectedPath.replace(/\\/g, "/"));
-      console.log("Path set to:", selectedPath);
     }
   }, [selectedPath, setPathMain]);
 
@@ -33,7 +32,6 @@ export const FormProyects = ({ onFolderSelected }: FormProyectsProps) => {
 
       try {
         await InsertProyect(proyectValue, path, sepValue);
-        console.log("User inserted");
       } catch (error) {
         console.error("Error inserting user:", error);
       }
@@ -49,13 +47,11 @@ export const FormProyects = ({ onFolderSelected }: FormProyectsProps) => {
   function handlerSep(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
     setSepValue(value);
-    console.log(value);
   }
 
   function handlerProyect(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
     setProyectValue(value);
-    console.log(value);
   }
 
   return (
