@@ -18,7 +18,7 @@ pub fn process_log_file(
 	);
 
 	// Regex para validar si una columna parece ser una fecha (ej. YYYY-MM-DD, DD/MM/YYYY, etc.).
-	let date_regex = Regex::new(r"^\d{{1,4}}[-/]\d{{1,2}}[-/]\d{{1,4}}").unwrap();
+	let date_regex = Regex::new(r"^\d{1,4}[-/]\d{1,2}[-/]\d{1,4}").unwrap();
 
 	let mut processed_lines: Vec<String> = Vec::new();
 

@@ -1,76 +1,81 @@
-import Editor from "@monaco-editor/react";
 import { useEffect, useState } from "react";
 import { TfiPencil } from "react-icons/tfi";
 import { getEnv } from "../config/initializePermissions";
 import { useContentPathStore } from "../store/contentPathStore";
 import ExcelView from "./ExcelView/ExcelView";
+import LogAnalysisViewer from "./LogViewer/LogAnalysisViewer";
+import TabbedLogViewer from "./LogViewer/TabbedLogViewer";
+import SpecialFileViewer from "./SpecialFileViewer";
 import TextFileViewer from "./TextFileViewer/TextFileViewer";
 
 function BannerEditor({ separator }: { separator: string }) {
-	const selectedFile = useContentPathStore((state) => state.selectedFile);
-	const pathComplete = useContentPathStore((state) => state.selectedFilePath);
-	const [text, setText] = useState<string | undefined>("");
-	const path = useContentPathStore((state) => state.pathMain);
+  const {
+    selectedFile,
+    selectedFilePath: pathComplete,
+    pathMain: path,
+    tabbedLogView,
+    analysisLogView,
+  } = useContentPathStore();
 
-	getEnv(path);
+  const [text, setText] = useState<string | undefined>("");
 
-	useEffect(() => {
-		if (!selectedFile) {
-			setText("");
-			return;
-		}
+  getEnv(path);
 
-		// Solo inicializar el texto para archivos que NO sean .txt
-		if (!selectedFile.name.toLowerCase().endsWith(".txt")) {
-			setText(selectedFile.content || "");
-		}
-	}, [selectedFile]); // Remover 'text' de las dependencias para evitar bucles
+  useEffect(() => {
+    if (!selectedFile) {
+      setText("");
+      return;
+    }
 
-	// UseEffect separado para manejar cambios en el texto (auto-guardado)
-	useEffect(() => {
-		if (!selectedFile || selectedFile.name.toLowerCase().endsWith(".txt")) {
-			return; // No hacer nada para archivos .txt
-		}
+    if (!selectedFile.name.toLowerCase().endsWith(".txt")) {
+      setText(selectedFile.content || "");
+    }
+  }, [selectedFile]);
 
-		// Aquí iría la lógica de auto-guardado si está habilitada
-		// const saveText = setTimeout(async () => {
-		// 	await writeTextFile(`${path}\\${selectedFile.name}`, text ?? "");
-		// }, 1000);
-		// return () => clearTimeout(saveText);
-	}, [selectedFile]);
-	// }, [text, selectedFile, path]);
+  useEffect(() => {
+    if (!selectedFile || selectedFile.name.toLowerCase().endsWith(".txt")) {
+      return;
+    }
+  }, [selectedFile]);
 
-	const renderContent = () => {
-		if (!selectedFile || !pathComplete) {
-			return <TfiPencil className="text-9l text-neutral-200" />;
-		}
+  const renderContent = () => {
+    if (tabbedLogView) {
+      return <TabbedLogViewer files={tabbedLogView.files} />;
+    }
 
-		const fileExtension = selectedFile.name.split(".").pop()?.toLowerCase();
+    if (analysisLogView) {
+      return (
+        <LogAnalysisViewer
+          fileName={analysisLogView.fileName}
+          logContent={analysisLogView.logContent}
+        />
+      );
+    }
 
-		switch (fileExtension) {
-			case "txt":
-				return (
-					<TextFileViewer path={pathComplete} delimiter={` ${separator} `} />
-				);
-			case "xlsx":
-			case "xls":
-			case "csv":
-				return <ExcelView path={pathComplete} />;
-			default:
+    if (!selectedFile || !pathComplete) {
+      return <TfiPencil className="text-9l text-neutral-200" />;
+    }
 
-				return (
-					<Editor
-						theme="vs-dark"
-						defaultLanguage="javascript"
-						options={{ fontSize: 20 }}
-						onChange={(value) => setText(value)}
-						value={selectedFile?.content ?? ""}
-					/>
-				);
-		}
-	};
+    const fileExtension = selectedFile.name.split(".").pop()?.toLowerCase();
 
-	return <>{renderContent()}</>;
+    switch (fileExtension) {
+      case "txt":
+        return (
+          <TextFileViewer path={pathComplete} delimiter={` ${separator} `} />
+        );
+      case "xlsx":
+      case "xls":
+      case "csv":
+        return <ExcelView path={pathComplete} />;
+      case "log":
+        // This case is handled by analysisLogView, but as a fallback:
+        return <SpecialFileViewer fileName={selectedFile.name} />;
+      default:
+        return <SpecialFileViewer fileName={selectedFile.name} />;
+    }
+  };
+
+  return <>{renderContent()}</>;
 }
 
 export default BannerEditor;

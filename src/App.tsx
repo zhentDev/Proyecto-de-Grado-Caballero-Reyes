@@ -11,63 +11,65 @@ import { ResizeLayout } from "./config/resizeLayout";
 import { useContentPathStore } from "./store/contentPathStore";
 
 function App() {
-	useEffect(() => {
-		//new ResizeLayout()
-	}, []);
-	const setPathMain = useContentPathStore((state) => state.setPathMain);
-	let path: string | null = useContentPathStore((state) => state.pathMain);
-	const navigate = useNavigate();
-	const [delimiter, setDelimiter] = useState("");
+  const setPathMain = useContentPathStore((state) => state.setPathMain);
+  const path = useContentPathStore((state) => state.pathMain);
+  const [delimiter, setDelimiter] = useState("");
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-	useEffect(() => {
-		// If path is false, redirect to "/"
-		const checkProject = async () => {
-			try {
-				const result = await validateProyectExists();
-				// Optionally update path in store here if needed
-				path = result.path || null; // Ensure path is set to null if not found
-				setPathMain(path);
-				setDelimiter(result.separator || "");
-				if (!path) navigate("/");
-				else navigate("/editor");
-			} catch (error) {
-				console.error("Error validating project existence:", error);
-				// navigate("/");
-			}
-		};
-		checkProject();
-	}, [path, navigate, setPathMain]);
+  useEffect(() => {
+    const checkProject = async () => {
+      try {
+        const result = await validateProyectExists();
+        const newPath = result.path || null;
+        setPathMain(newPath);
+        setDelimiter(result.separator || "");
+      } catch (error) {
+        console.error("Error validating project existence:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkProject();
+  }, [setPathMain]);
 
-	function ProtectedRoute({ element }: { element: JSX.Element }) {
-		return path ? element : <Navigate to="/" />;
-	}
+  const handleBack = () => {
+    setPathMain(null);
+    navigate("/");
+  };
 
-	return (
-		<div className="container-layout w-full h-full">
-			<Routes>
-				<Route path="/" element={<FormProyects />} />
-				<Route
-					path="/editor"
-					element={
-						<ProtectedRoute
-							element={
-								<div className="flex w-full h-full">
-									<div className="bg-blue-300 text-black min-h-screen flex w-fit">
-										<Menu />
-									</div>
-									<div className="flex justify-center items-center editor w-full h-full">
-										<BannerEditor separator={delimiter} />
-									</div>
-								</div>
-							}
-						/>
-					}
-				/>
-			</Routes>
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-			<Toaster />
-		</div>
-	);
+  return (
+    <div className="container-layout w-full h-full">
+      <Routes>
+        <Route
+          path="/"
+          element={path ? <Navigate to="/editor" /> : <FormProyects />}
+        />
+        <Route
+          path="/editor"
+          element={
+            path ? (
+              <div className="flex w-full h-full">
+                <div className="bg-black text-black min-h-screen flex w-fit">
+                  <Menu />
+                </div>
+                <div className="flex justify-center items-center editor w-full h-full">
+                  <BannerEditor separator={delimiter} />
+                </div>
+              </div>
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        />
+      </Routes>
+
+      <Toaster />
+    </div>
+  );
 }
-
 export default App;

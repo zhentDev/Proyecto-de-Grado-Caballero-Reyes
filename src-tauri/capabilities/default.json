@@ -37,6 +37,58 @@
         }
       ],
       "identifier": "fs:allow-remove"
+    },
+    {
+      "allow": [
+        {
+          "path": "C:/Users/USUARIO/OneDrive - netapplications.com.co/RPA/AA/Grupo Pharael/Proyectos/RAPH05_Preasignacion_de_la_Mesa_de_Ayuda/**/*"
+        }
+      ],
+      "identifier": "fs:allow-write-text-file"
+    },
+    {
+      "allow": [
+        "**/*",
+        {
+          "path": "C:/Users/USUARIO/OneDrive - netapplications.com.co/RPA/AA/Grupo Pharael/Proyectos/RAPH05_Preasignacion_de_la_Mesa_de_Ayuda/**/*"
+        }
+      ],
+      "identifier": "fs:scope",
+      "requireLiteralLeadingDot": false
+    },
+    {
+      "allow": [
+        {
+          "path": "C:/Users/USUARIO/OneDrive - netapplications.com.co/RPA/AA/Grupo Pharael/Proyectos/RAPH05_Preasignacion_de_la_Mesa_de_Ayuda/**/*"
+        }
+      ],
+      "identifier": "fs:allow-remove"
+    },
+    {
+      "allow": [
+        {
+          "path": "C:/Users/USUARIO/OneDrive - netapplications.com.co/RPA/AA/Grupo Pharael/Proyectos/RAPH04_Depuracion_de_Clientes_ICG/**/*"
+        }
+      ],
+      "identifier": "fs:allow-write-text-file"
+    },
+    {
+      "allow": [
+        "**/*",
+        {
+          "path": "C:/Users/USUARIO/OneDrive - netapplications.com.co/RPA/AA/Grupo Pharael/Proyectos/RAPH04_Depuracion_de_Clientes_ICG/**/*"
+        }
+      ],
+      "identifier": "fs:scope",
+      "requireLiteralLeadingDot": false
+    },
+    {
+      "allow": [
+        {
+          "path": "C:/Users/USUARIO/OneDrive - netapplications.com.co/RPA/AA/Grupo Pharael/Proyectos/RAPH04_Depuracion_de_Clientes_ICG/**/*"
+        }
+      ],
+      "identifier": "fs:allow-remove"
     }
   ],
   "windows": [

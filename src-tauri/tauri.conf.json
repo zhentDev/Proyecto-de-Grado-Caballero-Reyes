@@ -13,8 +13,10 @@
 		"windows": [
 			{
 				"title": "proyecto-monitoreo-bots",
-				"width": 1000,
-				"height": 550,
+				"fullscreen": false,
+				"maximizable": true,
+				"resizable": false,
+				"decorations": true,
 				"minWidth": 800,
 				"minHeight": 600
 			}
