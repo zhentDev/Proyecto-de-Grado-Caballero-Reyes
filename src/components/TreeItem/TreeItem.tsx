@@ -31,6 +31,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
     removeFolderName,
     showTabbedLogView,
     showAnalysisLogView,
+    clearFileView,
     tabbedLogView, // Get the active tab view from the store
   } = useContentPathStore();
 
@@ -72,6 +73,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
     try {
       const filePath = await join(currentPath, itemName);
       const content = await readTextFile(filePath);
+      console.log(`[TreeItem] Dispatching setSelectedFile for ${itemName}`); // Log antes de setSelectedFile
       setSelectedFile({ name: itemName, content }, filePath);
     } catch (error) {
       console.error("Error al leer el archivo:", error);
@@ -89,43 +91,60 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
   const handleFileClick = async () => {
     if (!isFile) return;
 
+    console.log(`[TreeItem] Clicked: ${itemName}`); // Log al inicio del click
+
+    // Clear all previous file viewing states before processing a new click
+    clearFileView();
+    console.log(`[TreeItem] clearFileView() called for ${itemName}`); // Log después de clearFileView
+
     const logFileRegex = /^(Log-\d{2}-\d{2}-\d{4}) (\d{6})\.txt$/i;
     const match = itemName.match(logFileRegex);
 
     if (match) {
-      try {
-        const dateGroup = match[1]; // e.g., "Log-06-10-2025"
+      const dateGroup = match[1]; // e.g., "Log-06-10-2025"
 
-        const dirPath = await dirname(await join(currentPath, itemName));
-        const dirEntries = await readDir(dirPath);
+      const dirPath = await dirname(await join(currentPath, itemName));
+      const dirEntries = await readDir(dirPath);
 
-        const matchingLogFiles = dirEntries.filter(
-          (entry) => entry.isFile && entry.name?.startsWith(dateGroup)
+      const matchingLogFiles = dirEntries.filter(
+        (entry) => entry.isFile && entry.name?.startsWith(dateGroup)
+      );
+
+      const filesData = await Promise.all(
+        matchingLogFiles.map(async (file) => {
+          const filePath = await join(dirPath, file.name || "");
+          const fileMatch = file.name?.match(logFileRegex);
+          const timeName = fileMatch ? fileMatch[2] : file.name || ""; //
+          return { name: timeName, path: filePath };
+        })
+      );
+
+      const clickedFilePath = await join(currentPath, itemName);
+
+      // Sort by time
+      filesData.sort((a, b) => a.name.localeCompare(b.name));
+
+      if (filesData.length > 0) {
+        // Find the index of the clicked file AFTER sorting
+        const initialIndex = filesData.findIndex(
+          (file) => file.path === clickedFilePath
         );
 
-        const filesData = await Promise.all(
-          matchingLogFiles.map(async (file) => {
-            const filePath = await join(dirPath, file.name || "");
-            const fileMatch = file.name?.match(logFileRegex);
-            const timeName = fileMatch ? fileMatch[2] : file.name || ""; // e.g., "090547"
-            return { name: timeName, path: filePath };
-          })
-        );
+        // Explicitly clear selectedFile before showing tabbed log view
+        setSelectedFile(null, null);
 
-        // Sort by time
-        filesData.sort((a, b) => a.name.localeCompare(b.name));
-
-        if (filesData.length > 0) {
-          showTabbedLogView({ dateGroup, files: filesData });
-        } else {
-          handleNormalFileClick();
-        }
-      } catch (error) {
-        console.error("Error handling log file click:", error);
-        toast.error("Error al procesar archivos de log.");
+        console.log(`[TreeItem] Dispatching showTabbedLogView for ${itemName} with initialIndex: ${initialIndex}`); // Log antes de showTabbedLogView
+        showTabbedLogView({
+          dateGroup,
+          files: filesData,
+          initialIndex: initialIndex !== -1 ? initialIndex : 0,
+        });
+      } else {
+        console.log(`[TreeItem] Dispatching handleNormalFileClick (fallback) for ${itemName}`); // Log antes de handleNormalFileClick (fallback)
         handleNormalFileClick();
       }
     } else {
+      console.log(`[TreeItem] Dispatching handleNormalFileClick for ${itemName}`); // Log antes de handleNormalFileClick
       handleNormalFileClick();
     }
   };
@@ -228,7 +247,13 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
             ? "opacity-50 cursor-not-allowed"
             : "hover:bg-amber-500 hover:cursor-pointer"
         )}
-        onClick={isFile ? (isPartofActiveTabView ? undefined : handleClick) : toggleExpansion}
+        onClick={
+          isFile
+            ? isPartofActiveTabView
+              ? undefined
+              : handleClick
+            : toggleExpansion
+        }
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             if (isFile) {

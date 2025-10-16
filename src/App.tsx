@@ -1,3 +1,7 @@
+import {
+  WebviewWindow,
+  getCurrentWebviewWindow,
+} from "@tauri-apps/api/webviewwindow";
 import { Toaster } from "react-hot-toast";
 import "./styles/App.css";
 import "./styles/App.scss";
@@ -7,7 +11,6 @@ import { validateProyectExists } from "./api/db";
 import BannerEditor from "./components/BannerEditor";
 import { FormProyects } from "./components/FormProyects";
 import Menu from "./components/Menu/Menu";
-import { ResizeLayout } from "./config/resizeLayout";
 import { useContentPathStore } from "./store/contentPathStore";
 
 function App() {
@@ -18,6 +21,18 @@ function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const setInitialTitle = async () => {
+      try {
+        const win = getCurrentWebviewWindow();
+        if (win) {
+          // await win.setTitle("Nuevo título dinámico");
+        }
+      } catch (e) {
+        console.error("Failed to set window title", e);
+      }
+    };
+    setInitialTitle();
+
     const checkProject = async () => {
       try {
         const result = await validateProyectExists();

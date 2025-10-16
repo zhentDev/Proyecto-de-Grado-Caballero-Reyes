@@ -16,6 +16,7 @@ interface Folder {
 export interface TabbedLogView {
     dateGroup: string;
     files: { name: string; path: string }[];
+    initialIndex: number;
 }
 
 export interface AnalysisLogView {
@@ -58,11 +59,19 @@ export const useContentPathStore = create<ContentPathState>((set) => ({
 		set((state) => ({ filesNames: [...state.filesNames, name] })),
 	setFilesNames: (names) => set({ filesNames: names }),
     // Updated to use the new clear function
-	setSelectedFile: (file, path = null) =>
-		set(() => {
-            return { selectedFile: file, selectedFilePath: path, tabbedLogView: null, analysisLogView: null };
-        }),
-	removeFileName: (name) =>
+	  setSelectedFile: (file, path = null) =>
+	  set((state) => {
+	     console.log(`[Store] setSelectedFile called with file: ${file?.name}, path: ${path}`); // Log al inicio de la acción
+	       // Only set selectedFile if tabbedLogView is not currently active
+	       if (state.tabbedLogView) {
+	         console.log(`[Store] setSelectedFile BLOCKED because tabbedLogView is active.`); // Log si se bloquea
+	         return state; // Do not update if tabbedLogView is active
+	       }
+	       const newState = { selectedFile: file, selectedFilePath: path,
+	  tabbedLogView: null, analysisLogView: null };
+	     console.log(`[Store] setSelectedFile new state:`, newState); // Log el nuevo estado
+	       return newState;
+	     }),	removeFileName: (name) =>
 		set((state) => ({ filesNames: state.filesNames.filter((n) => n !== name) })),
 
 	foldersNames: [],
@@ -79,7 +88,19 @@ export const useContentPathStore = create<ContentPathState>((set) => ({
     // New state implementation for log viewers
     tabbedLogView: null,
     analysisLogView: null,
-    showTabbedLogView: (view) => set({ tabbedLogView: view, analysisLogView: null, selectedFile: null, selectedFilePath: null }),
+        showTabbedLogView: (view) => set((state) => {
+          console.log(`[Store] showTabbedLogView called with dateGroup: ${view.dateGroup}, initialIndex: ${view.initialIndex}`); // Log al inicio de la acción
+          const newState = { tabbedLogView: view,
+            analysisLogView: null, selectedFile: null, selectedFilePath: null };
+          console.log(`[Store] showTabbedLogView new state:`, newState); // Log el nuevo estado
+          return newState;
+        }),
     showAnalysisLogView: (view) => set({ analysisLogView: view, tabbedLogView: null, selectedFile: null, selectedFilePath: null }),
-    clearFileView: () => set({ selectedFile: null, selectedFilePath: null, tabbedLogView: null, analysisLogView: null }),
+        clearFileView: () => set((state) => {
+          console.log(`[Store] clearFileView called.`); // Log al inicio de la acción
+          const newState = { selectedFile: null, selectedFilePath: null,
+            tabbedLogView: null, analysisLogView: null };
+          console.log(`[Store] clearFileView new state:`, newState); // Log el nuevo estado
+          return newState;
+        }),
 }));

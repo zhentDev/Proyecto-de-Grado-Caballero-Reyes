@@ -17,20 +17,21 @@ function Menu() {
   const projectName = path ? path.split("\\").pop() : "";
 
   return (
-    <div className="menu flex flex-col gap-2">
+    <div className="menu flex flex-col gap-2 h-screen p-2">
       {path && (
-        <h1 className="text-white font-bold mr-4 text-sm bg-transparent w-full p-1 rounded-md">
+        <h1 className="text-white font-bold mr-4 text-sm bg-transparent w-full p-1 rounded-md truncate">
           {projectName}
         </h1>
       )}
       <button
         type="button"
-        className="back-button rounded-md w-3/5 mx-auto text-xs"
+        className="back-button rounded-md w-3/5 mx-auto text-xs flex-shrink-0"
         onClick={handleBack}
       >
         Volver
       </button>
-      <div className="bg-zinc-800 border-2 border-sky-950 rounded-md content h-full">
+      {/* This container will now grow and handle overflow correctly */}
+      <div className="bg-zinc-800 border-2 border-sky-950 rounded-md content flex flex-col flex-grow min-h-0">
         <BannerForm path={path ?? ""} />
         <BannerList />
       </div>

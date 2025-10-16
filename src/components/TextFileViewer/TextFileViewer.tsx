@@ -81,6 +81,7 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
   const headers = ["", "Tipo", "Fecha", "Descripción"];
   const classes = ["show", "hidden", "show", "show"];
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const unlistenRef = useRef<(() => void) | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: logData.length,
@@ -124,7 +125,6 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
   }, [path]);
 
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
     const loadData = async () => {
       try {
         const [data, maquinaValue]: [string[][], string | null] = await invoke(
@@ -140,18 +140,26 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
           setLogEntries(parsedEntries);
         }
         setMaquina(maquinaValue ?? null);
-        unlisten = await listen("file-change", () => {
+        unlistenRef.current = await listen("file-change", () => {
           debouncedReload();
         });
       } catch (error) {
         console.error("Error loading file:", error);
+        unlistenRef.current = null; // Ensure ref is null on error
       } finally {
         setLoading(false);
       }
     };
     loadData();
     return () => {
-      if (unlisten) unlisten();
+      if (unlistenRef.current) {
+        try {
+          unlistenRef.current();
+        } catch (e) {
+          console.error("Error unlistening from file-change event:", e);
+        }
+        unlistenRef.current = null; // Clear ref after unlistening
+      }
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [path, delimiter, debouncedReload]);

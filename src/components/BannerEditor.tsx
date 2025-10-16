@@ -1,3 +1,4 @@
+import type React from "react";
 import { useEffect, useState } from "react";
 import { TfiPencil } from "react-icons/tfi";
 import { getEnv } from "../config/initializePermissions";
@@ -8,7 +9,11 @@ import TabbedLogViewer from "./LogViewer/TabbedLogViewer";
 import SpecialFileViewer from "./SpecialFileViewer";
 import TextFileViewer from "./TextFileViewer/TextFileViewer";
 
-function BannerEditor({ separator }: { separator: string }) {
+interface BannerEditorProps {
+  separator: string;
+}
+
+const BannerEditor: React.FC<BannerEditorProps> = ({ separator }) => {
   const {
     selectedFile,
     selectedFilePath: pathComplete,
@@ -17,9 +22,13 @@ function BannerEditor({ separator }: { separator: string }) {
     analysisLogView,
   } = useContentPathStore();
 
-  const [text, setText] = useState<string | undefined>("");
+  console.log(`[BannerEditor] Render. tabbedLogView: ${!!tabbedLogView}, selectedFile: ${selectedFile?.name || 'null'}`); // Log al inicio del render
 
-  getEnv(path);
+  const [, setText] = useState<string | undefined>("");
+
+  useEffect(() => {
+    getEnv(path);
+  }, [path]);
 
   useEffect(() => {
     if (!selectedFile) {
@@ -39,17 +48,22 @@ function BannerEditor({ separator }: { separator: string }) {
   }, [selectedFile]);
 
   const renderContent = () => {
+    console.log(`[BannerEditor] renderContent decision. tabbedLogView: ${!!tabbedLogView}, analysisLogView: ${!!analysisLogView}, selectedFile: ${selectedFile?.name || 'null'}`); // Log antes de la decisión
+
     if (tabbedLogView) {
+      console.log(`[BannerEditor] Rendering TabbedLogViewer.`); // Log si renderiza TabbedLogViewer
       return (
         <TabbedLogViewer
           dateGroup={tabbedLogView.dateGroup}
           files={tabbedLogView.files}
+          initialIndex={tabbedLogView.initialIndex}
           delimiter={` ${separator} `}
         />
       );
     }
 
     if (analysisLogView) {
+      console.log(`[BannerEditor] Rendering LogAnalysisViewer.`); // Log si renderiza LogAnalysisViewer
       return (
         <LogAnalysisViewer
           fileName={analysisLogView.fileName}
@@ -59,11 +73,13 @@ function BannerEditor({ separator }: { separator: string }) {
     }
 
     if (!selectedFile || !pathComplete) {
-      return <TfiPencil className="text-9l text-neutral-200" />;
+      console.log(`[BannerEditor] Rendering TfiPencil (empty state).`); // Log si renderiza el estado vacío
+      return <TfiPencil className="text-9xl text-neutral-200" />;
     }
 
     const fileExtension = selectedFile.name.split(".").pop()?.toLowerCase();
 
+    console.log(`[BannerEditor] Rendering specific file viewer for: ${selectedFile.name}`); // Log si renderiza un visor específico
     switch (fileExtension) {
       case "txt":
         return (
@@ -82,6 +98,6 @@ function BannerEditor({ separator }: { separator: string }) {
   };
 
   return <>{renderContent()}</>;
-}
+};
 
 export default BannerEditor;
