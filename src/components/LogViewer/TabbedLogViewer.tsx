@@ -1,6 +1,9 @@
 import type React from "react";
 import { useState } from "react";
 import TextFileViewer from "../TextFileViewer/TextFileViewer";
+import "./TabbedLogViewer.scss";
+
+import LogDeletionWarning from "./LogDeletionWarning";
 
 export interface LogFileInfo {
   name: string;
@@ -8,11 +11,13 @@ export interface LogFileInfo {
 }
 
 interface TabbedLogViewerProps {
+  dateGroup: string;
   files: LogFileInfo[];
   delimiter: string;
 }
 
 const TabbedLogViewer: React.FC<TabbedLogViewerProps> = ({
+  dateGroup,
   files,
   delimiter,
 }) => {
@@ -22,25 +27,31 @@ const TabbedLogViewer: React.FC<TabbedLogViewerProps> = ({
     return <div className="p-4 text-white">No files to display.</div>;
   }
 
+  // Phase 2: Show deletion warning if there are more than 7 tabs
+  if (files.length > 7) {
+    return <LogDeletionWarning dateGroup={dateGroup} files={files} />;
+  }
+
   return (
-    <div className="flex flex-col h-full text-white w-full">
-      <div className="flex border-b border-gray-700">
+    <div className="flex flex-col h-full w-full bg-gray-900 rounded-t-lg overflow-hidden">
+      <div className="flex items-center bg-gray-800 p-2">
+        <h2 className="text-md font-bold text-white tracking-wider">
+          {dateGroup}
+        </h2>
+      </div>
+      <div className="tab-bar">
         {files.map((file, index) => (
           <button
             key={file.path}
             type="button"
-            className={`p-0 m-0 h-8 text font-medium align-middle items-center ${
-              activeTab === index
-                ? "border-b-2 border-blue-500 text-blue-400"
-                : "text-gray-400 hover:bg-gray-800"
-            }`}
+            className={`tab-button ${activeTab === index ? "active" : ""}`}
             onClick={() => setActiveTab(index)}
           >
             {file.name}
           </button>
         ))}
       </div>
-      <div className="bg-gray-900 flex-grow overflow-y-auto w-full h-full">
+      <div className="flex-grow overflow-y-auto w-full h-full p-1 bg-gray-900">
         <TextFileViewer path={files[activeTab].path} delimiter={delimiter} />
       </div>
     </div>

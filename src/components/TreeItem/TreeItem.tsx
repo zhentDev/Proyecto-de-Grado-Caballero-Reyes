@@ -31,6 +31,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
     removeFolderName,
     showTabbedLogView,
     showAnalysisLogView,
+    tabbedLogView, // Get the active tab view from the store
   } = useContentPathStore();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -40,6 +41,14 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
   const itemName = item.name || "Sin nombre";
   const isFile = item.isFile;
   const isFolder = item.isDirectory;
+
+  // Check if the current item is part of the active tab view
+  const logFileRegexForCheck = /^(Log-\d{2}-\d{2}-\d{4}) (\d{6})\.txt$/i;
+  const itemMatch = itemName.match(logFileRegexForCheck);
+  const isPartofActiveTabView =
+    isFile && tabbedLogView && itemMatch
+      ? tabbedLogView.dateGroup === itemMatch[1]
+      : false;
 
   useEffect(() => {
     if (isFolder && selectedFolder?.name === itemName) {
@@ -77,50 +86,45 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
     }
   };
 
-  const handleLogFileClick = async () => {
-    const dateStr = splitLogIntoExecutions(itemName);
-    if (!dateStr) {
-      handleNormalFileClick();
-      return;
-    }
+  const handleFileClick = async () => {
+    if (!isFile) return;
 
-    try {
-      const dirPath = await dirname(await join(currentPath, itemName));
-      const dirEntries = await readDir(dirPath);
-      const matchingLogFiles = dirEntries.filter(
-        (entry) =>
-          entry.isFile &&
-          entry.name?.includes(dateStr) &&
-          entry.name?.toLowerCase().startsWith("log") &&
-          entry.name?.toLowerCase().endsWith(".txt")
-      );
+    const logFileRegex = /^(Log-\d{2}-\d{2}-\d{4}) (\d{6})\.txt$/i;
+    const match = itemName.match(logFileRegex);
 
-      if (matchingLogFiles.length > 1) {
+    if (match) {
+      try {
+        const dateGroup = match[1]; // e.g., "Log-06-10-2025"
+
+        const dirPath = await dirname(await join(currentPath, itemName));
+        const dirEntries = await readDir(dirPath);
+
+        const matchingLogFiles = dirEntries.filter(
+          (entry) => entry.isFile && entry.name?.startsWith(dateGroup)
+        );
+
         const filesData = await Promise.all(
           matchingLogFiles.map(async (file) => {
             const filePath = await join(dirPath, file.name || "");
-            return { name: file.name || "", path: filePath };
+            const fileMatch = file.name?.match(logFileRegex);
+            const timeName = fileMatch ? fileMatch[2] : file.name || ""; // e.g., "090547"
+            return { name: timeName, path: filePath };
           })
         );
-        showTabbedLogView({ files: filesData });
-      } else if (matchingLogFiles.length === 1) {
-        const filePath = await join(dirPath, itemName);
-        const logContent = await readTextFile(filePath);
-        showAnalysisLogView({ fileName: itemName, logContent });
+
+        // Sort by time
+        filesData.sort((a, b) => a.name.localeCompare(b.name));
+
+        if (filesData.length > 0) {
+          showTabbedLogView({ dateGroup, files: filesData });
+        } else {
+          handleNormalFileClick();
+        }
+      } catch (error) {
+        console.error("Error handling log file click:", error);
+        toast.error("Error al procesar archivos de log.");
+        handleNormalFileClick();
       }
-    } catch (error) {
-      console.error("Error handling log file click:", error);
-      toast.error("Error al procesar el archivo de log.");
-      handleNormalFileClick();
-    }
-  };
-
-  const handleFileClick = async () => {
-    if (!isFile) return;
-    const lowerCaseName = itemName.toLowerCase();
-
-    if (lowerCaseName.startsWith("txt") && lowerCaseName.endsWith(".txt")) {
-      handleLogFileClick();
     } else {
       handleNormalFileClick();
     }
@@ -218,14 +222,17 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
     <div className="tree-item">
       <div
         className={twMerge(
-          `py-2 px-2 hover:bg-amber-500 hover:cursor-pointer relative select-none text-sm tree-item-container flex justify-between indent-level-${level}`,
-          isSelected ? "bg-sky-950" : ""
+          `py-2 px-2 relative select-none text-sm tree-item-container flex justify-between indent-level-${level}`,
+          isSelected && !isPartofActiveTabView ? "bg-sky-950" : "",
+          isPartofActiveTabView
+            ? "opacity-50 cursor-not-allowed"
+            : "hover:bg-amber-500 hover:cursor-pointer"
         )}
-        onClick={isFile ? handleClick : toggleExpansion}
+        onClick={isFile ? (isPartofActiveTabView ? undefined : handleClick) : toggleExpansion}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             if (isFile) {
-              handleClick();
+              if (!isPartofActiveTabView) handleClick();
             } else {
               toggleExpansion();
             }

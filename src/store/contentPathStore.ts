@@ -14,6 +14,7 @@ interface Folder {
 
 // New interfaces for the different log view modes
 export interface TabbedLogView {
+    dateGroup: string;
     files: { name: string; path: string }[];
 }
 

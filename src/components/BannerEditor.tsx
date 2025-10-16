@@ -40,7 +40,13 @@ function BannerEditor({ separator }: { separator: string }) {
 
   const renderContent = () => {
     if (tabbedLogView) {
-      return <TabbedLogViewer files={tabbedLogView.files} />;
+      return (
+        <TabbedLogViewer
+          dateGroup={tabbedLogView.dateGroup}
+          files={tabbedLogView.files}
+          delimiter={` ${separator} `}
+        />
+      );
     }
 
     if (analysisLogView) {
