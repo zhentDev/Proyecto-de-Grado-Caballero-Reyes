@@ -17,9 +17,9 @@ function Menu() {
   const projectName = path ? path.split("\\").pop() : "";
 
   return (
-    <div className="menu flex flex-col gap-2 h-screen p-2">
+    <div className="menu flex flex-col gap-2 p-2 max-h-full overflow-hidden">
       {path && (
-        <h1 className="text-white font-bold mr-4 text-sm bg-transparent w-full p-1 rounded-md truncate">
+        <h1 className="text-white font-bold mr-4 text-sm bg-transparent w-full p-1 rounded-md truncate h-8 z-50">
           {projectName}
         </h1>
       )}
@@ -31,7 +31,7 @@ function Menu() {
         Volver
       </button>
       {/* This container will now grow and handle overflow correctly */}
-      <div className="bg-zinc-800 border-2 border-sky-950 rounded-md content flex flex-col flex-grow min-h-0">
+      <div className="bg-zinc-800 border-2 border-sky-950 rounded-md content flex flex-col flex-grow min-h-0 overflow-y-auto">
         <BannerForm path={path ?? ""} />
         <BannerList />
       </div>

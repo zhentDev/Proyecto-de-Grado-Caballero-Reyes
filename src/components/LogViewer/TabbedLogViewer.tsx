@@ -22,14 +22,10 @@ const TabbedLogViewer: React.FC<TabbedLogViewerProps> = ({
   initialIndex,
   delimiter,
 }) => {
-  console.log(`[TabbedLogViewer] Render. initialIndex prop: ${initialIndex}, dateGroup: ${dateGroup}`); // Log al inicio del render
-
   const [activeTab, setActiveTab] = useState(initialIndex);
-  console.log(`[TabbedLogViewer] useState initialized activeTab to: ${activeTab}`); // Log la inicialización de useState
 
   // Effect to sync active tab with props
   useEffect(() => {
-    console.log(`[TabbedLogViewer] useEffect triggered. initialIndex: ${initialIndex}. Setting activeTab to: ${initialIndex}`); // Log cuando el useEffect se dispara
     setActiveTab(initialIndex);
   }, [initialIndex, files]);
 
@@ -56,7 +52,6 @@ const TabbedLogViewer: React.FC<TabbedLogViewerProps> = ({
             type="button"
             className={`tab-button ${activeTab === index ? "active" : ""}`}
             onClick={() => {
-              console.log(`[TabbedLogViewer] Tab button clicked: ${file.name}, index: ${index}`); // Log cuando se hace clic en una pestaña
               setActiveTab(index);
             }}
           >
@@ -66,12 +61,13 @@ const TabbedLogViewer: React.FC<TabbedLogViewerProps> = ({
       </div>
       <div className="flex-grow overflow-y-auto w-full h-full p-1 bg-gray-900">
         {/* Check if files[activeTab] exists to prevent errors on fast re-renders */}
-                {files[activeTab] && (
-                  <TextFileViewer
-                    key={files[activeTab].path} // Add a key here
-                    path={files[activeTab].path} delimiter={delimiter}
-                  />
-                )}
+        {files[activeTab] && (
+          <TextFileViewer
+            key={files[activeTab].path} // Add a key here
+            path={files[activeTab].path}
+            delimiter={delimiter}
+          />
+        )}
       </div>
     </div>
   );

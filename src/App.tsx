@@ -11,11 +11,13 @@ import { validateProyectExists } from "./api/db";
 import BannerEditor from "./components/BannerEditor";
 import { FormProyects } from "./components/FormProyects";
 import Menu from "./components/Menu/Menu";
+import SystemInfoBox from "./components/SystemInfoBox/SystemInfoBox"; // Added import
 import { useContentPathStore } from "./store/contentPathStore";
 
 function App() {
-  const setPathMain = useContentPathStore((state) => state.setPathMain);
   const path = useContentPathStore((state) => state.pathMain);
+  const rehydrated = useContentPathStore((state) => state.rehydrated);
+  const setPathMain = useContentPathStore((state) => state.setPathMain);
   const [delimiter, setDelimiter] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -53,9 +55,16 @@ function App() {
     navigate("/");
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
+  // if (loading) {
+  //   return <div>Loading...</div>;
+  // }
+
+  if (!rehydrated) {
+    // espera a que Zustand rehidrate desde localStorage
+    return <div>Loading app state...</div>;
   }
+
+  console.log(path);
 
   return (
     <div className="container-layout w-full h-full">
@@ -63,14 +72,31 @@ function App() {
         <Route
           path="/"
           element={path ? <Navigate to="/editor" /> : <FormProyects />}
+          // element={<Navigate to="/editor" />}
         />
         <Route
           path="/editor"
           element={
+            <div className="flex w-full h-full">
+              <div className="bg-black text-black min-h-screen flex flex-col">
+                <Menu />
+                <SystemInfoBox />
+              </div>
+              <div className="flex justify-center items-center editor w-full h-full">
+                <BannerEditor separator={delimiter} />
+              </div>
+            </div>
+          }
+        />
+      </Routes>
+      {/* <Route
+          path="/editor"
+          element={
             path ? (
               <div className="flex w-full h-full">
-                <div className="bg-black text-black min-h-screen flex w-fit">
+                <div className="bg-black text-black min-h-screen flex flex-col">
                   <Menu />
+                  <SystemInfoBox />
                 </div>
                 <div className="flex justify-center items-center editor w-full h-full">
                   <BannerEditor separator={delimiter} />
@@ -81,7 +107,7 @@ function App() {
             )
           }
         />
-      </Routes>
+      </Routes> */}
 
       <Toaster />
     </div>

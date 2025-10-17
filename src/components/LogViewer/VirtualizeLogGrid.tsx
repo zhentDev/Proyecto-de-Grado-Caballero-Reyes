@@ -129,11 +129,11 @@ export const VirtualizedGrid: React.FC<VirtualizedGridProps> = ({
                         </td>
                       );
                     })}
-                    <td className="hidden"></td>
-                    <td className="hidden"></td>
-                    <td className="hidden"></td>
-                    <td className="hidden"></td>
-                    <td className="hidden"></td>
+                    <td className="hidden"> </td>
+                    <td className="hidden"> </td>
+                    <td className="hidden"> </td>
+                    <td className="hidden"> </td>
+                    <td className="hidden"> </td>
                   </tr>
                 );
               })}

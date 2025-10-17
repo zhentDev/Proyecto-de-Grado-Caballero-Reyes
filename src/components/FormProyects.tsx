@@ -55,7 +55,7 @@ export const FormProyects = ({ onFolderSelected }: FormProyectsProps) => {
   }
 
   return (
-    <div className="flex flex-row w-full h-full justify-center items-center gap-4 p-4 bg-gray-800 text-white">
+    <div className="flex flex-row w-full h-full justify-center items-center gap-4 p-4 bg-gray-800 text-white select-none">
       <div className="flex flex-col gap-4 w-full h-full p-4">
         <h1 className="text-5xl">Registrar Proyecto</h1>
         <section className="justify-center items-center flex flex-row w-full h-full gap-4">

@@ -164,6 +164,8 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
     };
   }, [path, delimiter, debouncedReload]);
 
+  console.log(logData);
+
   useEffect(() => {
     if (logData.length > 0 && tableRef.current) {
       resizeInstance.current = new ResizeTable();

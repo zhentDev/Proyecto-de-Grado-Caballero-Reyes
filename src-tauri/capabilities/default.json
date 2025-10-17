@@ -89,6 +89,32 @@
         }
       ],
       "identifier": "fs:allow-remove"
+    },
+    {
+      "allow": [
+        {
+          "path": "C:/Users/USUARIO/OneDrive - netapplications.com.co/RPA/AA/Desayuno/**/*"
+        }
+      ],
+      "identifier": "fs:allow-write-text-file"
+    },
+    {
+      "allow": [
+        "**/*",
+        {
+          "path": "C:/Users/USUARIO/OneDrive - netapplications.com.co/RPA/AA/Desayuno/**/*"
+        }
+      ],
+      "identifier": "fs:scope",
+      "requireLiteralLeadingDot": false
+    },
+    {
+      "allow": [
+        {
+          "path": "C:/Users/USUARIO/OneDrive - netapplications.com.co/RPA/AA/Desayuno/**/*"
+        }
+      ],
+      "identifier": "fs:allow-remove"
     }
   ],
   "windows": [

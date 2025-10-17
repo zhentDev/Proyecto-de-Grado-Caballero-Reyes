@@ -22,8 +22,6 @@ const BannerEditor: React.FC<BannerEditorProps> = ({ separator }) => {
     analysisLogView,
   } = useContentPathStore();
 
-  console.log(`[BannerEditor] Render. tabbedLogView: ${!!tabbedLogView}, selectedFile: ${selectedFile?.name || 'null'}`); // Log al inicio del render
-
   const [, setText] = useState<string | undefined>("");
 
   useEffect(() => {
@@ -48,10 +46,7 @@ const BannerEditor: React.FC<BannerEditorProps> = ({ separator }) => {
   }, [selectedFile]);
 
   const renderContent = () => {
-    console.log(`[BannerEditor] renderContent decision. tabbedLogView: ${!!tabbedLogView}, analysisLogView: ${!!analysisLogView}, selectedFile: ${selectedFile?.name || 'null'}`); // Log antes de la decisión
-
     if (tabbedLogView) {
-      console.log(`[BannerEditor] Rendering TabbedLogViewer.`); // Log si renderiza TabbedLogViewer
       return (
         <TabbedLogViewer
           dateGroup={tabbedLogView.dateGroup}
@@ -63,7 +58,6 @@ const BannerEditor: React.FC<BannerEditorProps> = ({ separator }) => {
     }
 
     if (analysisLogView) {
-      console.log(`[BannerEditor] Rendering LogAnalysisViewer.`); // Log si renderiza LogAnalysisViewer
       return (
         <LogAnalysisViewer
           fileName={analysisLogView.fileName}
@@ -73,13 +67,11 @@ const BannerEditor: React.FC<BannerEditorProps> = ({ separator }) => {
     }
 
     if (!selectedFile || !pathComplete) {
-      console.log(`[BannerEditor] Rendering TfiPencil (empty state).`); // Log si renderiza el estado vacío
       return <TfiPencil className="text-9xl text-neutral-200" />;
     }
 
     const fileExtension = selectedFile.name.split(".").pop()?.toLowerCase();
 
-    console.log(`[BannerEditor] Rendering specific file viewer for: ${selectedFile.name}`); // Log si renderiza un visor específico
     switch (fileExtension) {
       case "txt":
         return (

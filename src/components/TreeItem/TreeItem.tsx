@@ -44,7 +44,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
   const isFolder = item.isDirectory;
 
   // Check if the current item is part of the active tab view
-  const logFileRegexForCheck = /^(Log-\d{2}-\d{2}-\d{4}) (\d{6})\.txt$/i;
+  const logFileRegexForCheck = /^(Log-\d{2}-\d{2}-\d{2,4}) (\d{6})\.txt$/i;
   const itemMatch = itemName.match(logFileRegexForCheck);
   const isPartofActiveTabView =
     isFile && tabbedLogView && itemMatch
@@ -73,7 +73,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
     try {
       const filePath = await join(currentPath, itemName);
       const content = await readTextFile(filePath);
-      console.log(`[TreeItem] Dispatching setSelectedFile for ${itemName}`); // Log antes de setSelectedFile
+
       setSelectedFile({ name: itemName, content }, filePath);
     } catch (error) {
       console.error("Error al leer el archivo:", error);
@@ -91,11 +91,8 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
   const handleFileClick = async () => {
     if (!isFile) return;
 
-    console.log(`[TreeItem] Clicked: ${itemName}`); // Log al inicio del click
-
     // Clear all previous file viewing states before processing a new click
     clearFileView();
-    console.log(`[TreeItem] clearFileView() called for ${itemName}`); // Log después de clearFileView
 
     const logFileRegex = /^(Log-\d{2}-\d{2}-\d{4}) (\d{6})\.txt$/i;
     const match = itemName.match(logFileRegex);
@@ -133,18 +130,15 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
         // Explicitly clear selectedFile before showing tabbed log view
         setSelectedFile(null, null);
 
-        console.log(`[TreeItem] Dispatching showTabbedLogView for ${itemName} with initialIndex: ${initialIndex}`); // Log antes de showTabbedLogView
         showTabbedLogView({
           dateGroup,
           files: filesData,
           initialIndex: initialIndex !== -1 ? initialIndex : 0,
         });
       } else {
-        console.log(`[TreeItem] Dispatching handleNormalFileClick (fallback) for ${itemName}`); // Log antes de handleNormalFileClick (fallback)
         handleNormalFileClick();
       }
     } else {
-      console.log(`[TreeItem] Dispatching handleNormalFileClick for ${itemName}`); // Log antes de handleNormalFileClick
       handleNormalFileClick();
     }
   };

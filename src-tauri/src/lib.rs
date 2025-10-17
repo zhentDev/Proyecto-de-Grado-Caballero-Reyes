@@ -3,6 +3,7 @@ mod permissions;
 mod process;
 
 use tauri::path::BaseDirectory::AppConfig;
+use tauri_plugin_os;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -18,6 +19,7 @@ pub fn run() {
 		.plugin(tauri_plugin_dialog::init())
 		.plugin(tauri_plugin_fs::init())
 		.plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_os::init())
 		.setup(|_app| {
 			println!("{:?}", AppConfig);
 			Ok(())
@@ -31,7 +33,9 @@ pub fn run() {
 			process::getpath::open_folder_dialog,
 			process::getpath::get_folder_contents,
 			process::excel::leer_excel,
-			process::excel::guardar_excel
+			process::excel::guardar_excel,
+            process::system_info::get_system_parameters,
+            process::system_info::get_system_info_formatted
 		])
 		.run(tauri::generate_context!())
 		.expect("error while running tauri application");

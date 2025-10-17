@@ -34,4 +34,5 @@ tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 umya-spreadsheet = "0.9"
 rust_xlsxwriter = "0.34"
 sha2 = "0.10.9"
-
+tauri-plugin-os = "2.0.0"
+sysinfo = "0.33"
