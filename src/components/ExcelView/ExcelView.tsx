@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type ExcelData = {
 	sheets: string[];
@@ -32,7 +32,7 @@ function ExcelView({ path }: { path: string }) {
 		}
 
 		const newGrid: string[][] = Array.from({ length: rows }, (_, i) =>
-			Array.from({ length: maxCols }, (_, j) => data[i]?.[j] || "")
+			Array.from({ length: maxCols }, (_, j) => data[i]?.[j] || ""),
 		);
 
 		setGridData(newGrid);
@@ -66,7 +66,7 @@ function ExcelView({ path }: { path: string }) {
 	async function guardarExcel() {
 		try {
 			const filteredData = data.filter((row) =>
-				row.some((cell) => cell && cell.trim() !== "")
+				row.some((cell) => cell && cell.trim() !== ""),
 			);
 			await invoke("guardar_excel", { ruta: path, datos: filteredData });
 			alert("Archivo guardado con éxito!");
@@ -85,22 +85,19 @@ function ExcelView({ path }: { path: string }) {
 		setMenuVisible(false);
 	}
 
-	const editarCelda = useCallback(
-		(i: number, j: number, valor: string) => {
-			setData((prevData) => {
-				const newData = prevData.map((row) => [...row]);
-				while (newData.length <= i) {
-					newData.push([]);
-				}
-				while (newData[i].length <= j) {
-					newData[i].push("");
-				}
-				newData[i][j] = valor;
-				return newData;
-			});
-		},
-		[]
-	);
+	const editarCelda = useCallback((i: number, j: number, valor: string) => {
+		setData((prevData) => {
+			const newData = prevData.map((row) => [...row]);
+			while (newData.length <= i) {
+				newData.push([]);
+			}
+			while (newData[i].length <= j) {
+				newData[i].push("");
+			}
+			newData[i][j] = valor;
+			return newData;
+		});
+	}, []);
 
 	function agregarColumna() {
 		const newGrid = gridData.map((fila) => [...fila, ""]);
@@ -163,7 +160,8 @@ function ExcelView({ path }: { path: string }) {
 									>
 										<div className="grid items-center h-full">
 											<span
-												className={`invisible whitespace-pre px-2 col-start-1 row-start-1 ${i === 0 ? "font-bold" : ""}`}>
+												className={`invisible whitespace-pre px-2 col-start-1 row-start-1 ${i === 0 ? "font-bold" : ""}`}
+											>
 												{cell || " "}
 											</span>
 											<input
@@ -173,8 +171,8 @@ function ExcelView({ path }: { path: string }) {
 													i === 0
 														? "bg-slate-800 font-bold text-white"
 														: i % 2 !== 0
-														? "bg-[#25333d]"
-														: "bg-transparent"
+															? "bg-[#25333d]"
+															: "bg-transparent"
 												}`}
 											/>
 										</div>

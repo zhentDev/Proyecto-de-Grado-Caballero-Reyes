@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { TfiPencil } from "react-icons/tfi";
 import { getEnv } from "../config/initializePermissions";
 import { useContentPathStore } from "../store/contentPathStore";
+import { parseLogEntries } from "../utils/logParser";
 import ExcelView from "./ExcelView/ExcelView";
 import LogAnalysisViewer from "./LogViewer/LogAnalysisViewer";
 import TabbedLogViewer from "./LogViewer/TabbedLogViewer";
@@ -10,86 +11,90 @@ import SpecialFileViewer from "./SpecialFileViewer";
 import TextFileViewer from "./TextFileViewer/TextFileViewer";
 
 interface BannerEditorProps {
-  separator: string;
+	separator: string;
 }
 
 const BannerEditor: React.FC<BannerEditorProps> = ({ separator }) => {
-  const {
-    selectedFile,
-    selectedFilePath: pathComplete,
-    pathMain: path,
-    tabbedLogView,
-    analysisLogView,
-  } = useContentPathStore();
+	const {
+		selectedFile,
+		selectedFilePath: pathComplete,
+		pathMain: path,
+		tabbedLogView,
+		analysisLogView,
+	} = useContentPathStore();
 
-  const [, setText] = useState<string | undefined>("");
+	const [, setText] = useState<string | undefined>("");
 
-  useEffect(() => {
-    getEnv(path);
-  }, [path]);
+	useEffect(() => {
+		getEnv(path);
+	}, [path]);
 
-  useEffect(() => {
-    if (!selectedFile) {
-      setText("");
-      return;
-    }
+	useEffect(() => {
+		if (!selectedFile) {
+			setText("");
+			return;
+		}
 
-    if (!selectedFile.name.toLowerCase().endsWith(".txt")) {
-      setText(selectedFile.content || "");
-    }
-  }, [selectedFile]);
+		if (!selectedFile.name.toLowerCase().endsWith(".txt")) {
+			setText(selectedFile.content || "");
+		}
+	}, [selectedFile]);
 
-  useEffect(() => {
-    if (!selectedFile || selectedFile.name.toLowerCase().endsWith(".txt")) {
-      return;
-    }
-  }, [selectedFile]);
+	useEffect(() => {
+		if (!selectedFile || selectedFile.name.toLowerCase().endsWith(".txt")) {
+			return;
+		}
+	}, [selectedFile]);
 
-  const renderContent = () => {
-    if (tabbedLogView) {
-      return (
-        <TabbedLogViewer
-          dateGroup={tabbedLogView.dateGroup}
-          files={tabbedLogView.files}
-          initialIndex={tabbedLogView.initialIndex}
-          delimiter={` ${separator} `}
-        />
-      );
-    }
+	const renderContent = () => {
+		if (tabbedLogView) {
+			return (
+				<TabbedLogViewer
+					dateGroup={tabbedLogView.dateGroup}
+					files={tabbedLogView.files}
+					initialIndex={tabbedLogView.initialIndex}
+					delimiter={` ${separator} `}
+				/>
+			);
+		}
 
-    if (analysisLogView) {
-      return (
-        <LogAnalysisViewer
-          fileName={analysisLogView.fileName}
-          logContent={analysisLogView.logContent}
-        />
-      );
-    }
+		if (analysisLogView) {
+			const lines = analysisLogView.logContent.split("\n");
+			const logEntries = parseLogEntries(lines, lines);
+			// biome-ignore lint/suspicious/noEmptyBlockStatements: <explanation>
+			const handleEntryClick = (_lineNumber: number) => {};
+			return (
+				<LogAnalysisViewer
+					logEntries={logEntries}
+					onEntryClick={handleEntryClick}
+				/>
+			);
+		}
 
-    if (!selectedFile || !pathComplete) {
-      return <TfiPencil className="text-9xl text-neutral-200" />;
-    }
+		if (!selectedFile || !pathComplete) {
+			return <TfiPencil className="text-9xl text-neutral-200" />;
+		}
 
-    const fileExtension = selectedFile.name.split(".").pop()?.toLowerCase();
+		const fileExtension = selectedFile.name.split(".").pop()?.toLowerCase();
 
-    switch (fileExtension) {
-      case "txt":
-        return (
-          <TextFileViewer path={pathComplete} delimiter={` ${separator} `} />
-        );
-      case "xlsx":
-      case "xls":
-      case "csv":
-        return <ExcelView path={pathComplete} />;
-      case "log":
-        // This case is handled by analysisLogView, but as a fallback:
-        return <SpecialFileViewer fileName={selectedFile.name} />;
-      default:
-        return <SpecialFileViewer fileName={selectedFile.name} />;
-    }
-  };
+		switch (fileExtension) {
+			case "txt":
+				return (
+					<TextFileViewer path={pathComplete} delimiter={` ${separator} `} />
+				);
+			case "xlsx":
+			case "xls":
+			case "csv":
+				return <ExcelView path={pathComplete} />;
+			case "log":
+				// This case is handled by analysisLogView, but as a fallback:
+				return <SpecialFileViewer fileName={selectedFile.name} />;
+			default:
+				return <SpecialFileViewer fileName={selectedFile.name} />;
+		}
+	};
 
-  return <>{renderContent()}</>;
+	return <>{renderContent()}</>;
 };
 
 export default BannerEditor;

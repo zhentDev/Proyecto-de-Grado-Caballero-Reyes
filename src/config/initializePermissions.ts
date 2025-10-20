@@ -1,22 +1,22 @@
 import { invoke } from "@tauri-apps/api/core";
 
 const getFromRust = async (path: string) => {
-  try {
-    await invoke("set_write_permission", { path });
-    await invoke("set_read_permission", { path });
-    return await invoke("set_remove_permission", { path });
-  } catch (err) {
-    console.error("getFromRust", err);
-  }
+	try {
+		await invoke("set_write_permission", { path });
+		await invoke("set_read_permission", { path });
+		return await invoke("set_remove_permission", { path });
+	} catch (err) {
+		console.error("getFromRust", err);
+	}
 
-  return "";
+	return "";
 };
 
 export async function getEnv(path: string | null) {
-  if (!path) return;
-  const normalizedPath = `${path.replace(/\\/g, "/")}/**/*`;
+	if (!path) return;
+	const normalizedPath = `${path.replace(/\\/g, "/")}/**/*`;
 
-  await getFromRust(normalizedPath);
+	await getFromRust(normalizedPath);
 
-  return normalizedPath;
+	return normalizedPath;
 }

@@ -23,7 +23,7 @@ pub fn process_log_file(
  
     // Regex para validar si una columna parece ser una fecha (acepta varios formatos)
     let date_regex = Regex::new(
-        r#"^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}(?:\s+\d{1,2}[:.]\d{2}(?::\d{2})?)?$"#
+        r#"\d{1,4}[-/]\d{1,2}[-/]\d{1,4}"#
     ).unwrap();
  
     // Regex para detectar niveles de log comunes
@@ -72,8 +72,8 @@ pub fn process_log_file(
         // --- 🔁 Detectar si la primera columna es fecha y la segunda es nivel ---
         if columns.len() >= 2 {
             let first_is_date = date_regex.is_match(&columns[0]);
-            let second_is_date = date_regex.is_match(&columns[1]);
-            let first_is_level = level_regex.is_match(&columns[0]);
+            let _second_is_date = date_regex.is_match(&columns[1]);
+            let _first_is_level = level_regex.is_match(&columns[0]);
             let second_is_level = level_regex.is_match(&columns[1]);
  
             // Si la fecha está primero y el nivel después → invertirlas

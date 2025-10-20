@@ -3549,6 +3549,7 @@ dependencies = [
  "encoding_rs",
  "encoding_rs_io",
  "notify 6.1.1",
+ "once_cell",
  "regex",
  "rfd 0.12.1",
  "rust_xlsxwriter",

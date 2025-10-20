@@ -2,102 +2,102 @@
 
 /* Scroll personalizado para navegadores webkit */
 .tree-container::-webkit-scrollbar {
-  width: 8px;
+	width: 8px;
 }
 
 .tree-container::-webkit-scrollbar-track {
-  background: #374151; /* gray-700 */
-  border-radius: 4px;
+	background: #374151; /* gray-700 */
+	border-radius: 4px;
 }
 
 .tree-container::-webkit-scrollbar-thumb {
-  background: #6b7280; /* gray-500 */
-  border-radius: 4px;
+	background: #6b7280; /* gray-500 */
+	border-radius: 4px;
 }
 
 .tree-container::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af; /* gray-400 */
+	background: #9ca3af; /* gray-400 */
 }
 
 /* Animaciones suaves para la expansión */
 .tree-children {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tree-item-expandable:hover .tree-arrow {
-  color: #f59e0b; /* amber-500 */
+	color: #f59e0b; /* amber-500 */
 }
 
 /* Líneas de conexión para elementos hijo */
 .tree-branch-line {
-  position: relative;
+	position: relative;
 }
 
 .tree-branch-line::before {
-  content: "";
-  position: absolute;
-  left: -10px;
-  top: 0;
-  bottom: 50%;
-  width: 1px;
-  background: #4b5563; /* gray-600 */
+	content: "";
+	position: absolute;
+	left: -10px;
+	top: 0;
+	bottom: 50%;
+	width: 1px;
+	background: #4b5563; /* gray-600 */
 }
 
 /* Comportamiento de overflow similar a App.scss li */
 .tree-item-container {
-  position: relative;
-  max-width: 100%; /* Similar a .contentFolder en App.scss */
+	position: relative;
+	max-width: 100%; /* Similar a .contentFolder en App.scss */
 }
 
 .tree-item-container:hover {
-  cursor: pointer;
-  z-index: 1000;
+	cursor: pointer;
+	z-index: 1000;
 }
 
 .tree-item-text {
-  width: 100%;
-  position: relative;
-  white-space: normal; /* Allow text to wrap */
-  word-break: break-word; /* Break long words */
-  min-width: 0;
-  flex: 1;
+	width: 100%;
+	position: relative;
+	white-space: normal; /* Allow text to wrap */
+	word-break: break-word; /* Break long words */
+	min-width: 0;
+	flex: 1;
 }
 
 /* Estados hover y focus mejorados */
 .tree-item:hover {
-  background-color: rgba(245, 158, 11, 0.1); /* amber-500 with opacity */
+	background-color: rgba(245, 158, 11, 0.1); /* amber-500 with opacity */
 }
 
 .tree-item:focus {
-  outline: 2px solid #f59e0b; /* amber-500 */
-  outline-offset: -2px;
+	outline: 2px solid #f59e0b; /* amber-500 */
+	outline-offset: -2px;
 }
 
 /* Animación para el icono de carga */
 @keyframes pulse-loading {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
 }
 
 .loading-dots {
-  animation: pulse-loading 1.5s ease-in-out infinite;
+	animation: pulse-loading 1.5s ease-in-out infinite;
 }
 
 /* Mejora de accesibilidad para elementos seleccionados */
 .tree-item-selected {
-  background-color: #1e40af; /* blue-800 */
-  border-left: 3px solid #3b82f6; /* blue-500 */
+	background-color: #1e40af; /* blue-800 */
+	border-left: 3px solid #3b82f6; /* blue-500 */
 }
 
 /* Espaciado responsive */
 @media (max-width: 768px) {
-  .tree-item {
-    padding: 8px 4px;
-    font-size: 0.875rem;
-  }
+	.tree-item {
+		padding: 8px 4px;
+		font-size: 0.875rem;
+	}
 }

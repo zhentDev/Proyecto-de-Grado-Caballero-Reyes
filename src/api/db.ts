@@ -1,15 +1,23 @@
 import Database from "@tauri-apps/plugin-sql";
 
-const db = await Database.load("sqlite:database.sqlite");
+let db: Database | null = null;
+
+const getInstance = async () => {
+	if (!db) {
+		db = await Database.load("sqlite:database.sqlite");
+	}
+	return db;
+};
 
 export async function createTables() {
-  await db.execute(`
+	const db = await getInstance();
+	await db.execute(`
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL
         )
     `);
-  await db.execute(`
+	await db.execute(`
         CREATE TABLE IF NOT EXISTS proyects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -20,70 +28,71 @@ export async function createTables() {
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
     `);
-  // Return response if table already exists
-  const proyectsResult: string = await db.select(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name='proyects'"
-  );
-  const result: string = await db.select(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
-  );
-  if (proyectsResult.length > 0 && result.length > 0) {
-    // Return response if table already exists
-    return { message: "Table already exists" };
-  }
+	// Return response if table already exists
+	const proyectsResult: string = await db.select(
+		"SELECT name FROM sqlite_master WHERE type='table' AND name='proyects'",
+	);
+	const result: string = await db.select(
+		"SELECT name FROM sqlite_master WHERE type='table' AND name='users'",
+	);
+	if (proyectsResult.length > 0 && result.length > 0) {
+		// Return response if table already exists
+		return { message: "Table already exists" };
+	}
 }
 
 export async function deleteProyect(name: string) {
-  const db = await Database.load("sqlite:database.sqlite");
-  // await db.execute("DELETE FROM proyects WHERE name = ?", [name]);
-  await db.execute("DELETE FROM proyects;");
+	const db = await getInstance();
+	await db.execute("DELETE FROM proyects WHERE name = ?", [name]);
+	await db.execute("DELETE FROM proyects;");
 }
 
 // deleteProyect("hola");
 
 export async function getProyects() {
-  const db = await Database.load("sqlite:database.sqlite");
-  const result = await db.select("SELECT * FROM proyects");
-  return result;
+	const db = await getInstance();
+	const result = await db.select("SELECT * FROM proyects");
+	return result;
 }
 
 export async function getProyect(name: string) {
-  const db = await Database.load("sqlite:database.sqlite");
-  const result = await db.select("SELECT * FROM proyects WHERE name = ?", [
-    name,
-  ]);
-  return result;
+	const db = await getInstance();
+	const result = await db.select("SELECT * FROM proyects WHERE name = ?", [
+		name,
+	]);
+	return result;
 }
 
 export async function validateProyectExists() {
-  const result = await db.select(`
+	const db = await getInstance();
+	const result = await db.select(`
 		SELECT 
 			(SELECT EXISTS(SELECT 1 FROM proyects WHERE last_selected = 1)) as hasTrue,
 			(SELECT path FROM proyects WHERE last_selected = 1 LIMIT 1) as path,
 			(SELECT separator FROM proyects WHERE last_selected = 1 LIMIT 1) as separator
 	`);
-  const typedResult = result as Array<{
-    hasTrue: number;
-    path: string;
-    separator: string;
-  }>;
-  if (typedResult[0].hasTrue === 1) {
-    return {
-      path: typedResult[0].path,
-      separator: typedResult[0].separator,
-    };
-  }
-  return { path: "", separator: "" };
+	const typedResult = result as Array<{
+		hasTrue: number;
+		path: string;
+		separator: string;
+	}>;
+	if (typedResult[0].hasTrue === 1) {
+		return {
+			path: typedResult[0].path,
+			separator: typedResult[0].separator,
+		};
+	}
+	return { path: "", separator: "" };
 }
 
 export async function InsertProyect(
-  proyectValue: string,
-  path: string,
-  sepValue: string
+	proyectValue: string,
+	path: string,
+	sepValue: string,
 ) {
-  const db = await Database.load("sqlite:database.sqlite");
-  await db.execute(
-    "INSERT INTO proyects (name, path, separator, last_selected) VALUES (?, ?, ?, ?)",
-    [proyectValue, path, sepValue, 1]
-  );
+	const db = await getInstance();
+	await db.execute(
+		"INSERT INTO proyects (name, path, separator, last_selected) VALUES (?, ?, ?, ?)",
+		[proyectValue, path, sepValue, 1],
+	);
 }

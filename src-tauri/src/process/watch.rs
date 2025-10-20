@@ -78,9 +78,9 @@ pub async fn watch_file(path: String, window: Window) -> Result<(), String> {
 
                 }
 
-                Err(e) => {
+                Err(_e) => {
 
-                    eprintln!("⚠️ Error leyendo archivo (puede estar bloqueado o no existir): {}", e);
+                    // eprintln!("⚠️ Error leyendo archivo (puede estar bloqueado o no existir): {}", e);
 
                 }
 

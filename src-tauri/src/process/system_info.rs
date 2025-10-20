@@ -1,6 +1,8 @@
 use serde::{Serialize, Deserialize};
 use tauri::AppHandle;
 use sysinfo::{System, Disks, Networks};
+use crate::START_TIME;
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SystemParameters {
@@ -25,6 +27,9 @@ pub struct SystemParameters {
     os_name: String,
     os_version: String,
     os_arch: String,
+
+    // Startup Time
+    startup_time_ms: u128,
 }
 
 #[tauri::command]
@@ -60,6 +65,9 @@ pub async fn get_system_parameters(_app_handle: AppHandle) -> Result<SystemParam
     // CPU
     let cpu_count = sys.cpus().len();
     let cpu_usage = sys.global_cpu_usage();
+
+    // Startup time
+    let startup_time_ms = START_TIME.elapsed().as_millis();
     
     Ok(SystemParameters {
         total_memory,
@@ -74,6 +82,7 @@ pub async fn get_system_parameters(_app_handle: AppHandle) -> Result<SystemParam
         os_name,
         os_version,
         os_arch,
+        startup_time_ms,
     })
 }
 
@@ -84,6 +93,8 @@ pub async fn get_system_info_formatted(_app_handle: AppHandle) -> Result<String,
     
     let info = format!(
         "=== INFORMACIÓN DEL SISTEMA ===\n\
+        \nArranque:\n\
+        - Tiempo de Arranque: {} ms\n\
         \nSistema Operativo:\n\
         - Plataforma: {}\n\
         - Versión: {}\n\
@@ -101,6 +112,7 @@ pub async fn get_system_info_formatted(_app_handle: AppHandle) -> Result<String,
         \nCPU:\n\
         - Núcleos: {}\n\
         - Uso: {:.2}%",
+        params.startup_time_ms,
         params.os_name,
         params.os_version,
         params.os_arch,

@@ -4,9 +4,15 @@ mod process;
 
 use tauri::path::BaseDirectory::AppConfig;
 use tauri_plugin_os;
+use std::time::Instant;
+use once_cell::sync::Lazy;
+
+pub static START_TIME: Lazy<Instant> = Lazy::new(Instant::now);
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+	let _ = *START_TIME;
 	tauri::Builder::default()
 		.plugin(
 			tauri_plugin_sql::Builder::default()
