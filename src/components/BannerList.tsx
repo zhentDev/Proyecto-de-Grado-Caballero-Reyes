@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
 import { readDir, watch } from "@tauri-apps/plugin-fs";
 import { useEffect, useState } from "react";
@@ -18,6 +19,16 @@ function BannerList() {
 	useEffect(() => {
 		async function loadFilesFolders() {
 			if (!path) return;
+
+			// Notificar al harness para que empiece a vigilar la nueva ruta del proyecto
+			try {
+				console.log(`Notificando al harness la ruta del proyecto: ${path}`);
+				await invoke("set_harness_watch_path", { path });
+				console.log("Petición para vigilar la ruta enviada correctamente.");
+			} catch (e) {
+				console.error("No se pudo comunicar con el harness:", e);
+			}
+
 			try {
 				const result = await readDir(path);
 				const fileNames = result
