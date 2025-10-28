@@ -5,5 +5,4 @@ fn main() {
 	proyecto_monitoreo_bots_lib::run();
 	embed_manifest_file("./sample.exe.manifest").expect("unable to embed manifest file");
 	println!("cargo:rerun-if-changed=sample.exe.manifest");
-	proyecto_monitoreo_bots_lib::run();
 }

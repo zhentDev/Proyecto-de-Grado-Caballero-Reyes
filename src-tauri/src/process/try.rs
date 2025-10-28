@@ -5,40 +5,118 @@ use tauri::{
 	tray::TrayIconBuilder,
 	WindowEvent,
 };
-use tauri::{Emitter, Manager};
+use tauri::{tray::TrayIconId, AppHandle, Emitter, Manager};
 
 pub fn init_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
-	use tauri::{
-		menu::{Menu, MenuItem},
-		tray::TrayIconBuilder,
+	// Initial menu state
+	let initial_menu = {
+		let show =
+			tauri::menu::MenuItem::with_id(app, "show", "Ocultar ventana", true, None::<&str>)?;
+		let quit = tauri::menu::MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)?;
+		tauri::menu::Menu::with_items(app, &[&show, &quit])?
 	};
 
-	let show_i = MenuItem::with_id(app, "show", "Mostrar ventana", true, None::<&str>)?;
-	let quit_i = MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)?;
-	let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
-
-	TrayIconBuilder::new()
-		.menu(&menu)
-		.on_menu_event(|app, event| match event.id.as_ref() {
-			"show" => {
-				let win = app.get_webview_window("main").unwrap();
-				win.show().unwrap();
+	tauri::tray::TrayIconBuilder::new()
+		.menu(&initial_menu)
+		.on_menu_event(move |app, event| {
+			let window = app.get_webview_window("main").unwrap();
+			match event.id().as_ref() {
+				"show" => {
+					let new_menu = if window.is_visible().unwrap() {
+						window.hide().unwrap();
+						// Create a menu for when the window is hidden
+						let show_item = tauri::menu::MenuItem::with_id(
+							app,
+							"show",
+							"Mostrar ventana",
+							true,
+							None::<&str>,
+						)
+						.unwrap();
+						let quit_item = tauri::menu::MenuItem::with_id(
+							app,
+							"quit",
+							"Salir",
+							true,
+							None::<&str>,
+						)
+						.unwrap();
+						tauri::menu::Menu::with_items(app, &[&show_item, &quit_item]).unwrap()
+					} else {
+						window.show().unwrap();
+						window.set_focus().unwrap();
+						// Create a menu for when the window is visible
+						let show_item = tauri::menu::MenuItem::with_id(
+							app,
+							"show",
+							"Ocultar ventana",
+							true,
+							None::<&str>,
+						)
+						.unwrap();
+						let quit_item = tauri::menu::MenuItem::with_id(
+							app,
+							"quit",
+							"Salir",
+							true,
+							None::<&str>,
+						)
+						.unwrap();
+						tauri::menu::Menu::with_items(app, &[&show_item, &quit_item]).unwrap()
+					};
+					// Set the new menu on the tray
+					app.tray_by_id("main-tray")
+						.unwrap()
+						.set_menu(Some(new_menu))
+						.unwrap();
+				}
+				"quit" => {
+					app.exit(0);
+				}
+				_ => {}
 			}
-			"quit" => app.exit(0),
-			_ => {}
 		})
 		.build(app)?;
 	Ok(())
 }
 
 pub fn init_window_event(app: &tauri::AppHandle) {
-	let win = app.get_webview_window("main").unwrap();
-	win.clone().on_window_event(move |event| {
-		if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-			win.hide().unwrap();
-			api.prevent_close();
-		}
-	});
+	let app_handle = app.clone();
+	app.get_webview_window("main")
+		.unwrap()
+		.on_window_event(move |event| {
+			if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+				api.prevent_close();
+				let window = app_handle.get_webview_window("main").unwrap();
+				window.hide().unwrap();
+
+				// Rebuild the menu to update the text
+				let show_item = tauri::menu::MenuItem::with_id(
+					&app_handle,
+					"show",
+					"Mostrar ventana",
+					true,
+					None::<&str>,
+				)
+				.unwrap();
+				let quit_item = tauri::menu::MenuItem::with_id(
+					&app_handle,
+					"quit",
+					"Salir",
+					true,
+					None::<&str>,
+				)
+				.unwrap();
+				let menu =
+					tauri::menu::Menu::with_items(&app_handle, &[&show_item, &quit_item]).unwrap();
+
+				app_handle
+					.tray_by_id("main-tray")
+					.unwrap()
+					.set_menu(Some(menu))
+					.unwrap();
+			}
+		});
 }
 
 pub fn spawn_background_thread(app: tauri::AppHandle) {
