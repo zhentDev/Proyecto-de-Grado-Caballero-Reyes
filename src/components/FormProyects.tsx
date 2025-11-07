@@ -19,7 +19,10 @@ export const FormProyects = ({ onFolderSelected }: FormProyectsProps) => {
 	const setPathMain = useContentPathStore((state) => state.setPathMain);
 	useEffect(() => {
 		if (selectedPath) {
-			setPathMain(selectedPath.replace(/\\/g, "/"));
+			const normalizedPath = selectedPath.replace(/\\/g, "/");
+			setPathMain(normalizedPath);
+			invoke("set_monitored_project", { path: normalizedPath }).catch(console.error);
+			invoke("listen_for_directory_changes", { path: normalizedPath }).catch(console.error);
 		}
 	}, [selectedPath, setPathMain]);
 

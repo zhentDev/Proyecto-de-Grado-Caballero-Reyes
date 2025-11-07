@@ -1,32 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import { TrayIcon } from "@tauri-apps/api/tray";
-import { Menu } from "@tauri-apps/api/menu";
-import { defaultWindowIcon } from "@tauri-apps/api/app";
-
-import { listen } from "@tauri-apps/api/event";
-listen("evento_background", (event) => {
-  console.log("Nuevo evento:", event.payload);
-});
-
-const menu = await Menu.new({
-  items: [
-    {
-      id: "quit",
-      text: "Quit",
-    },
-  ],
-});
-
-const options = {
-  menu,
-  menuOnLeftClick: true,
-  //   icon: await defaultWindowIcon(),
-};
-
-const tray = await TrayIcon.new(options);
-
-// const tray = await TrayIcon.new({ tooltip: 'awesome tray tooltip' });
-// tray.setTooltip("new tooltip")
 
 const getFromRust = async (path: string) => {
   try {

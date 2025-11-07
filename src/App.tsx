@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewwindow";
 import { Toaster } from "react-hot-toast";
 import "./styles/App.css";
@@ -36,6 +37,10 @@ function App() {
         const result = await validateProyectExists();
         const newPath = result.path || null;
         setPathMain(newPath);
+        if (newPath) {
+          await invoke("set_monitored_project", { path: newPath });
+          await invoke("listen_for_directory_changes", { path: newPath });
+        }
         setDelimiter(result.separator || "");
       } catch (error) {
         console.error("Error validating project existence:", error);
