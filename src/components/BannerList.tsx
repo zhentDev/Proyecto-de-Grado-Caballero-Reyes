@@ -1,158 +1,74 @@
 import { invoke } from "@tauri-apps/api/core";
-import { join } from "@tauri-apps/api/path";
-import { readDir, watch } from "@tauri-apps/plugin-fs";
-import { useEffect, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
+import { useCallback, useEffect, useState } from "react";
 import { useContentPathStore } from "../store/contentPathStore";
 import TreeItem from "./TreeItem/TreeItem";
 
+// Definimos el tipo de dato que esperamos del backend
+interface FolderItem {
+    name: string;
+    is_file: boolean;
+    is_directory: boolean;
+    children: FolderItem[];
+}
+
 function BannerList() {
-	const setFilesNames = useContentPathStore((state) => state.setFilesNames);
-	const filesNames = useContentPathStore((state) => state.filesNames);
-	const setFoldersNames = useContentPathStore((state) => state.setFoldersNames);
-	const foldersNames = useContentPathStore((state) => state.foldersNames);
-	const path = useContentPathStore((state) => state.pathMain);
-	const showTabbedLogView = useContentPathStore(
-		(state) => state.showTabbedLogView,
-	);
-	const [initialLoadDone, setInitialLoadDone] = useState(false);
+    const [items, setItems] = useState<FolderItem[]>([]);
+    const path = useContentPathStore((state) => state.pathMain);
 
-	useEffect(() => {
-		async function loadFilesFolders() {
-			if (!path) return;
+    const loadFilesFolders = useCallback(async () => {
+        if (!path) return;
+        try {
+            console.log("Recargando contenido del directorio...");
+            const result = await invoke<FolderItem[]>("get_folder_contents", { path });
+            setItems(result);
+        } catch (error) {
+            console.error("Error al leer el directorio:", error);
+        }
+    }, [path]);
 
-			// Notificar al harness para que empiece a vigilar la nueva ruta del proyecto
-			try {
-				console.log(`Notificando al harness la ruta del proyecto: ${path}`);
-				await invoke("set_harness_watch_path", { path });
-				console.log("Petición para vigilar la ruta enviada correctamente.");
-			} catch (e) {
-				console.error("No se pudo comunicar con el harness:", e);
-			}
+    // Efecto para la carga inicial y cuando cambia la ruta principal
+    useEffect(() => {
+        loadFilesFolders();
+    }, [path, loadFilesFolders]);
 
-			try {
-				const result = await readDir(path);
-				const fileNames = result
-					.map((file) => (file.isFile ? file.name : null))
-					.filter((name) => name !== null);
-				setFilesNames(fileNames as string[]);
-				const folderNames = result
-					.map((folder) => (folder.isDirectory ? folder.name : null))
-					.filter((name) => name !== null);
-				setFoldersNames(folderNames as string[]);
+    // Efecto para escuchar los cambios del backend
+    useEffect(() => {
+        let unlisten: (() => void) | undefined;
 
-				// Auto-open logs for the current date on initial load
-				if (!initialLoadDone) {
-					const today = new Date();
-					const day = String(today.getDate()).padStart(2, "0");
-					const month = String(today.getMonth() + 1).padStart(2, "0");
-					const year = today.getFullYear();
-					const dateGroup = `Log-${day}-${month}-${year}`;
+        const setupListener = async () => {
+            unlisten = await listen('directory-changed', () => {
+                console.log("Cambio en directorio detectado desde el backend, recargando...");
+                loadFilesFolders();
+            });
+        };
 
-					const logFileRegex = /^(Log-\d{2}-\d{2}-\d{4}) (\d{6})\.txt$/i;
-					const todaysLogFiles = result.filter(
-						(entry) => entry.isFile && entry.name?.startsWith(dateGroup),
-					);
+        setupListener();
 
-					if (todaysLogFiles.length > 0) {
-						const filesData = await Promise.all(
-							todaysLogFiles.map(async (file) => {
-								const filePath = await join(path, file.name || "");
-								const fileMatch = file.name?.match(logFileRegex);
-								const timeName = fileMatch ? fileMatch[2] : file.name || "";
-								return { name: timeName, path: filePath };
-							}),
-						);
+        return () => {
+            if (unlisten) {
+                unlisten();
+            }
+        };
+    }, [loadFilesFolders]);
 
-						filesData.sort((a, b) => a.name.localeCompare(b.name));
 
-						showTabbedLogView({ dateGroup, files: filesData, initialIndex: 0 });
-					}
-
-					setInitialLoadDone(true);
-				}
-			} catch (error) {
-				console.error("Error al leer el directorio:", error);
-			}
-		}
-
-		loadFilesFolders();
-
-		let unwatch: (() => void) | undefined;
-
-		const startWatching = async () => {
-			if (!path) return;
-			try {
-				unwatch = await watch(
-					path,
-					() => {
-						loadFilesFolders();
-					},
-					{ recursive: true, delayMs: 100 },
-				);
-			} catch (error) {
-				console.error("Error al observar el directorio:", error);
-			}
-		};
-
-		startWatching();
-
-		return () => {
-			if (typeof unwatch === "function") {
-				unwatch();
-			}
-		};
-	}, [
-		path,
-		setFilesNames,
-		setFoldersNames,
-		showTabbedLogView,
-		initialLoadDone,
-	]);
-
-	return (
-		<div className="h-full overflow-y-auto tree-container">
-			{/* Renderizar todos los items usando TreeItem */}
-			{path && (
-				<div className="space-y-1 p-2">
-					{/* Primero las carpetas */}
-					{foldersNames.map((folderName) => {
-						const folderEntry = {
-							name: folderName,
-							isFile: false,
-							isDirectory: true,
-							isSymlink: false, // Asumiendo que no es symlink, ajusta si es necesario
-						};
-						return (
-							<TreeItem
-								key={folderName}
-								item={folderEntry}
-								currentPath={path}
-								level={0}
-							/>
-						);
-					})}
-
-					{/* Luego los archivos */}
-					{filesNames.map((fileName) => {
-						const fileEntry = {
-							name: fileName,
-							isFile: true,
-							isDirectory: false,
-							isSymlink: false, // Asumiendo que no es symlink, ajusta si es necesario
-						};
-						return (
-							<TreeItem
-								key={fileName}
-								item={fileEntry}
-								currentPath={path}
-								level={0}
-							/>
-						);
-					})}
-				</div>
-			)}
-		</div>
-	);
+    return (
+        <div className="h-full overflow-y-auto tree-container">
+            {path && (
+                <div className="space-y-1 p-2">
+                    {items.map((item) => (
+                        <TreeItem
+                            key={item.name}
+                            item={item as any}
+                            currentPath={path}
+                            level={0}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default BannerList;

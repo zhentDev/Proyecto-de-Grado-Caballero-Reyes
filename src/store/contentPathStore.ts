@@ -25,20 +25,12 @@ export interface AnalysisLogView {
 }
 
 interface ContentPathState {
-	filesNames: string[];
 	selectedFile: File | null;
 	selectedFilePath: string | null;
-	addFileName: (name: string) => void;
-	setFilesNames: (names: string[]) => void;
 	setSelectedFile: (file: File | null, path?: string | null) => void;
-	removeFileName: (name: string) => void;
 
-	foldersNames: string[];
 	selectedFolder: Folder | null;
-	addFolderName: (name: string) => void;
-	setFoldersNames: (names: string[]) => void;
 	setSelectedFolder: (folder: Folder | null) => void;
-	removeFolderName: (name: string) => void;
 
 	pathMain: string | null;
 	setPathMain: (path: string | null) => void;
@@ -58,12 +50,8 @@ interface ContentPathState {
 export const useContentPathStore = create<ContentPathState>()(
 	persist(
 		(set, _get) => ({
-			filesNames: [],
 			selectedFile: null,
 			selectedFilePath: null,
-			addFileName: (name) =>
-				set((state) => ({ filesNames: [...state.filesNames, name] })),
-			setFilesNames: (names) => set({ filesNames: names }),
 			setSelectedFile: (file, path = null) =>
 				set((state) => {
 					if (state.tabbedLogView) return state;
@@ -74,22 +62,10 @@ export const useContentPathStore = create<ContentPathState>()(
 						analysisLogView: null,
 					};
 				}),
-			removeFileName: (name) =>
-				set((state) => ({
-					filesNames: state.filesNames.filter((n) => n !== name),
-				})),
 
-			foldersNames: [],
 			selectedFolder: null,
-			addFolderName: (name) =>
-				set((state) => ({ foldersNames: [...state.foldersNames, name] })),
-			setFoldersNames: (names) => set({ foldersNames: names }),
 			setSelectedFolder: (folder: Folder | null) =>
 				set({ selectedFolder: folder }),
-			removeFolderName: (name) =>
-				set((state) => ({
-					foldersNames: state.foldersNames.filter((n) => n !== name),
-				})),
 
 			pathMain: null,
 			setPathMain: (path) => set({ pathMain: path }),

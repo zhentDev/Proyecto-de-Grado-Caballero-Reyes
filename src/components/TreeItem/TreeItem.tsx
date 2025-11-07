@@ -1,7 +1,6 @@
 import { dirname, join } from "@tauri-apps/api/path";
-import { readDir, readTextFile, remove } from "@tauri-apps/plugin-fs";
-import type { DirEntry } from "@tauri-apps/plugin-fs";
-import { useEffect, useState } from "react";
+import { readTextFile, remove } from "@tauri-apps/plugin-fs";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { FiTrash, FiX } from "react-icons/fi";
 import { IoIosArrowForward } from "react-icons/io";
@@ -14,8 +13,16 @@ import FileIcon, {
 } from "../HandleIcons";
 import "./TreeItem.css";
 
+interface FolderItem {
+    name: string;
+    path: string;
+    is_file: boolean;
+    is_directory: boolean;
+    children: FolderItem[];
+}
+
 interface TreeItemProps {
-	item: DirEntry;
+	item: FolderItem;
 	currentPath: string;
 	level?: number; // Para manejar la indentación por niveles
 }
@@ -26,20 +33,16 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 		setSelectedFile,
 		selectedFolder,
 		setSelectedFolder,
-		removeFileName,
-		removeFolderName,
 		showTabbedLogView,
 		clearFileView,
 		tabbedLogView, // Get the active tab view from the store
 	} = useContentPathStore();
 
 	const [isExpanded, setIsExpanded] = useState(false);
-	const [children, setChildren] = useState<DirEntry[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
 
 	const itemName = item.name || "Sin nombre";
-	const isFile = item.isFile;
-	const isFolder = item.isDirectory;
+	const isFile = item.is_file;
+	const isFolder = item.is_directory;
 
 	// Check if the current item is part of the active tab view
 	const logFileRegexForCheck = /^(Log-\d{2}-\d{2}-\d{2,4}) (\d{6})\.txt$/i;
@@ -48,11 +51,6 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 		isFile && tabbedLogView && itemMatch
 			? tabbedLogView.dateGroup === itemMatch[1]
 			: false;
-
-	useEffect(() => {
-		if (isFolder && selectedFolder?.name === itemName) {
-		}
-	}, [selectedFolder, itemName, isFolder]);
 
 	const handleNormalFileClick = async () => {
 		if (!canOpenFile(itemName)) {
@@ -99,14 +97,13 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 			const dateGroup = match[1]; // e.g., "Log-06-10-2025"
 
 			const dirPath = await dirname(await join(currentPath, itemName));
-			const dirEntries = await readDir(dirPath);
 
-			const matchingLogFiles = dirEntries.filter(
-				(entry) => entry.isFile && entry.name?.startsWith(dateGroup),
-			);
+      const parentDir = item.children.filter(
+        (entry) => entry.is_file && entry.name?.startsWith(dateGroup)
+      );
 
 			const filesData = await Promise.all(
-				matchingLogFiles.map(async (file) => {
+				parentDir.map(async (file) => {
 					const filePath = await join(dirPath, file.name || "");
 					const fileMatch = file.name?.match(logFileRegex);
 					const timeName = fileMatch ? fileMatch[2] : file.name || ""; //
@@ -141,37 +138,9 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 		}
 	};
 
-	const handleFolderClick = async () => {
-		if (!isFolder) return;
-
-		try {
-			setIsLoading(true);
-			const folderPath = await join(currentPath, itemName);
-			const content = await readDir(folderPath);
-
-			setChildren(content);
-			setSelectedFolder({ name: itemName, content, path: folderPath });
+	const toggleExpansion = () => {
+		if (isFolder) {
 			setIsExpanded(!isExpanded);
-		} catch (error) {
-			console.error("Error al leer la carpeta:", error);
-			toast.error("Error al leer la carpeta", {
-				duration: 2000,
-				position: "bottom-right",
-				style: {
-					background: "#0f172a",
-					color: "#fff",
-				},
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	const handleClick = () => {
-		if (isFile) {
-			handleFileClick();
-		} else if (isFolder) {
-			handleFolderClick();
 		}
 	};
 
@@ -188,10 +157,8 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 			await remove(itemPath);
 
 			if (isFile) {
-				removeFileName(itemName);
 				setSelectedFile(null, null);
 			} else {
-				removeFolderName(itemName);
 				setSelectedFolder(null);
 			}
 
@@ -223,11 +190,6 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 		? selectedFile?.name === itemName
 		: selectedFolder?.name === itemName;
 
-	const toggleExpansion = () => {
-		if (isFolder) {
-			handleFolderClick();
-		}
-	};
 
 	return (
 		<div className="tree-item">
@@ -239,17 +201,11 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 						? "opacity-50 cursor-not-allowed"
 						: "hover:bg-amber-500 hover:cursor-pointer",
 				)}
-				onClick={
-					isFile
-						? isPartofActiveTabView
-							? undefined
-							: handleClick
-						: toggleExpansion
-				}
+				onClick={isFile ? handleFileClick : toggleExpansion}
 				onKeyDown={(e) => {
 					if (e.key === "Enter" || e.key === " ") {
 						if (isFile) {
-							if (!isPartofActiveTabView) handleClick();
+							if (!isPartofActiveTabView) handleFileClick();
 						} else {
 							toggleExpansion();
 						}
@@ -267,11 +223,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 								isExpanded ? "rotate-90" : "rotate-0"
 							}`}
 						>
-							{isLoading ? (
-								<span className="text-xs animate-pulse">...</span>
-							) : (
-								<IoIosArrowForward className="text-gray-400" />
-							)}
+							<IoIosArrowForward className="text-gray-400" />
 						</span>
 					)}
 					{isFile && <span className="w-4" />}
@@ -315,9 +267,9 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
 							: "max-h-0 opacity-0 tree-collapsed"
 					}`}
 				>
-					{isExpanded && children.length > 0 && (
+					{isExpanded && item.children.length > 0 && (
 						<div className="border-l border-gray-600 ml-2 pl-2">
-							{children.map((child) => {
+							{item.children.map((child) => {
 								const childPath = `${currentPath}/${itemName}`;
 								return (
 									<TreeItem
