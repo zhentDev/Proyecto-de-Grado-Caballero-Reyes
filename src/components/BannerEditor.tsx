@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { TfiPencil } from "react-icons/tfi";
 import { getEnv } from "../config/initializePermissions";
 import {} from "../config/initializeSystemTry";
@@ -24,22 +24,9 @@ const BannerEditor: React.FC<BannerEditorProps> = ({ delimiter }) => {
     analysisLogView,
   } = useContentPathStore();
 
-  const [text, setText] = useState<string | undefined>("");
-
   useEffect(() => {
     getEnv(path);
   }, [path]);
-
-  useEffect(() => {
-    if (!selectedFile) {
-      setText("");
-      return;
-    }
-
-    if (!selectedFile.name.toLowerCase().endsWith(".txt")) {
-      setText(selectedFile.content || "");
-    }
-  }, [selectedFile]);
 
   useEffect(() => {
     if (!selectedFile || selectedFile.name.toLowerCase().endsWith(".txt")) {

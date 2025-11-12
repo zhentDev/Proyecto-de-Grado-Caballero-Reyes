@@ -2,7 +2,6 @@ import { writeTextFile } from "@tauri-apps/plugin-fs";
 // import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-import { useContentPathStore } from "../store/contentPathStore";
 // import { useSnippetStore } from "../store/snippetStore";
 
 interface BannerFormProps {
@@ -11,7 +10,6 @@ interface BannerFormProps {
 
 function BannerForm({ path }: BannerFormProps) {
   const [fileName, setFileName] = useState("");
-  const addFileName = useContentPathStore((state) => state.addFileName);
 
   return (
     <form
@@ -19,7 +17,6 @@ function BannerForm({ path }: BannerFormProps) {
         e.preventDefault();
         await writeTextFile(`${path}${fileName}`, "");
         setFileName("");
-        addFileName(fileName);
         toast.success("Archivo creado exitosamente", {
           duration: 2000,
           position: "bottom-right",

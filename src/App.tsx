@@ -1,5 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewwindow";
 import { Toaster } from "react-hot-toast";
 import "./styles/App.css";
 import "./styles/App.scss";
@@ -20,16 +19,6 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const setInitialTitle = async () => {
-      try {
-        const win = getCurrentWebviewWindow();
-        if (win) {
-          await win.setTitle("Nuevo título dinámico");
-        }
-      } catch (e) {
-        console.error("Failed to set window title", e);
-      }
-    };
     // setInitialTitle();
 
     const checkProject = async () => {

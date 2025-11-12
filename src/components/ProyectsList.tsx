@@ -13,7 +13,7 @@ type Proyect = {
 function ProyectsList() {
   const [proyects, setProyects] = useState<Proyect[]>([]);
   const navigate = useNavigate();
-  const setFoldersNames = useContentPathStore((state) => state.setFoldersNames);
+  const setPathMain = useContentPathStore((state) => state.setPathMain);
 
   useEffect(() => {
     const setup = async () => {
@@ -40,7 +40,7 @@ function ProyectsList() {
         const data = await getProyect(textContent);
         const proyectData = data as Proyect[];
         navigate("/editor", { state: { path: proyectData[0].path } });
-        setFoldersNames([proyectData[0].path]);
+        setPathMain(proyectData[0].path);
       } catch (error) {
         console.error("Error fetching projects:", error);
       }
