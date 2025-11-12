@@ -1,5 +1,8 @@
 use notify::{RecursiveMode, Watcher};
-use rumqttc::{Client, MqttOptions, QoS};
+use rand::Rng;
+use rumqttc::{Client, MqttOptions, QoS, Transport};
+use rustls;
+use rustls_native_certs;
 use std::fs::File;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -32,7 +35,6 @@ fn get_last_line(path: &Path) -> Option<String> {
 
 	let mut buffer = Vec::new();
 	let _bytes_read = 0;
-	let mut last_line_start = 0;
 
 	// Read chunks from the end of the file
 	let mut pos = file_len;
@@ -46,7 +48,7 @@ fn get_last_line(path: &Path) -> Option<String> {
 		// Search for newline in the buffer, from right to left
 		for i in (0..read_size as usize).rev() {
 			if buffer[i] == b'\n' {
-				last_line_start = i + 1;
+				let last_line_start = i + 1;
 				// If we found a newline, and it's not the very end of the file (meaning there's content after it)
 				// then the line starts after this newline.
 				// If it's the very last byte, it means the file ends with a newline, so we need to look further back.
@@ -84,8 +86,41 @@ pub async fn start_watcher(
 
 	// MQTT Client Setup
 	println!("MQTT: Setting up client options...");
-	let mut mqtt_options = MqttOptions::new("tauri_emitter", "localhost", 1883);
+
+	// --- TLS and Authentication Setup (using system certificates) ---
+	let broker_url = "3206f9b95f01467885968e05da78c36c.s1.eu.hivemq.cloud";
+	let broker_port = 8883;
+	// IMPORTANT: Replace with your actual username and password
+	let mqtt_user = "zhent";
+	let mqtt_password = "Zhent1234";
+
+	// Generate a random client ID suffix to prevent collisions
+	let random_suffix: String = rand::thread_rng()
+		.sample_iter(&rand::distributions::Alphanumeric)
+		.take(6)
+		.map(char::from)
+		.collect();
+	let client_id = format!("tauri_emitter_{}", random_suffix);
+
+	let mut mqtt_options = MqttOptions::new(client_id, broker_url, broker_port);
+	mqtt_options.set_credentials(mqtt_user, mqtt_password);
 	mqtt_options.set_keep_alive(Duration::from_secs(5));
+
+	// Configure TLS to use the system's native certificate store
+	// This is how we achieve `usetls: true` without providing certificate files
+	let mut root_cert_store = rustls::RootCertStore::empty();
+	for cert in rustls_native_certs::load_native_certs().expect("could not load platform certs") {
+		root_cert_store.add(&rustls::Certificate(cert.0)).unwrap();
+	}
+
+	let client_config = rustls::ClientConfig::builder()
+		.with_safe_defaults()
+		.with_root_certificates(root_cert_store)
+		.with_no_client_auth();
+
+	mqtt_options.set_transport(Transport::tls_with_config(client_config.into()));
+	// --- End of TLS and Authentication Setup ---
+
 	let (client, mut connection) = Client::new(mqtt_options, 10);
 	println!("MQTT: Client created.");
 

@@ -1,13 +1,16 @@
-use rumqttc::{Client, Event, MqttOptions, Packet, QoS}; // Added rumqttc imports
-use serde_json::Value; // Added for JSON parsing
-use std::fs; // Added fs
-use std::fs::OpenOptions;
-use std::path::PathBuf; // Added PathBuf
+use crate::process::background::fs::OpenOptions;
+use rand::Rng;
+use rumqttc::{Client, Event, MqttOptions, Packet, QoS, Transport};
+use rustls;
+use rustls_native_certs;
+use serde_json::Value;
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::Emitter;
 use tauri::{AppHandle, Manager};
 use tokio::sync::mpsc;
-use tokio::time::Duration; // Added for JSON parsing
+use tokio::time::Duration;
 
 // State to hold the sender for stopping the MQTT receiver
 pub struct MqttReceiverStopper(pub Mutex<Option<mpsc::Sender<()>>>);
@@ -25,9 +28,42 @@ pub async fn init(app_handle: AppHandle, mut rx: mpsc::Receiver<()>) {
 
 	loop {
 		println!("MQTT Receiver: Attempting to connect to broker...");
-		let mut mqtt_options = MqttOptions::new("tauri_receiver", "localhost", 1883);
-		mqtt_options.set_keep_alive(Duration::from_secs(30)); // Increased keep-alive
-		let (mut client, mut connection) = Client::new(mqtt_options, 10);
+
+		// --- TLS and Authentication Setup (using system certificates) ---
+		let broker_url = "3206f9b95f01467885968e05da78c36c.s1.eu.hivemq.cloud";
+		let broker_port = 8883;
+		// IMPORTANT: Replace with your actual username and password
+		let mqtt_user = "zhent";
+		let mqtt_password = "Zhent1234";
+
+		// Generate a random client ID suffix to prevent collisions
+		let random_suffix: String = rand::thread_rng()
+			.sample_iter(&rand::distributions::Alphanumeric)
+			.take(6)
+			.map(char::from)
+			.collect();
+		let client_id = format!("tauri_receiver_{}", random_suffix);
+
+		let mut mqtt_options = MqttOptions::new(client_id, broker_url, broker_port);
+		mqtt_options.set_credentials(mqtt_user, mqtt_password);
+		mqtt_options.set_keep_alive(Duration::from_secs(30));
+
+		// Configure TLS to use the system's native certificate store
+		let mut root_cert_store = rustls::RootCertStore::empty();
+		for cert in rustls_native_certs::load_native_certs().expect("could not load platform certs")
+		{
+			root_cert_store.add(&rustls::Certificate(cert.0)).unwrap();
+		}
+
+		let client_config = rustls::ClientConfig::builder()
+			.with_safe_defaults()
+			.with_root_certificates(root_cert_store)
+			.with_no_client_auth();
+
+		mqtt_options.set_transport(Transport::tls_with_config(client_config.into()));
+		// --- End of TLS and Authentication Setup ---
+
+		let (client, mut connection) = Client::new(mqtt_options, 10);
 
 		// Channel to send MQTT events from the blocking thread to the async task
 		let (event_tx, mut event_rx) = mpsc::channel(100);
