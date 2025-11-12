@@ -39,7 +39,7 @@ pub fn leer_excel(ruta: String, hoja: Option<String>) -> Result<ExcelData, Strin
 		let mut row_data = Vec::new();
 		for j in 1..=max_cols {
 			let val = sheet
-				.get_cell((j as u32, i as u32))
+				.get_cell((j, i))
 				.map(|c| c.get_value().to_string())
 				.unwrap_or_default();
 			row_data.push(val);

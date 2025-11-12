@@ -44,3 +44,4 @@ futures-util = "0.3"
 url = "2.5.0"
 walkdir = "2"
 opener = "0.8.3"
+rumqttc = { version = "0.23" }

@@ -12,10 +12,10 @@ import SpecialFileViewer from "./SpecialFileViewer";
 import TextFileViewer from "./TextFileViewer/TextFileViewer";
 
 interface BannerEditorProps {
-  separator: string;
+  delimiter: string;
 }
 
-const BannerEditor: React.FC<BannerEditorProps> = ({ separator }) => {
+const BannerEditor: React.FC<BannerEditorProps> = ({ delimiter }) => {
   const {
     selectedFile,
     selectedFilePath: pathComplete,
@@ -24,7 +24,7 @@ const BannerEditor: React.FC<BannerEditorProps> = ({ separator }) => {
     analysisLogView,
   } = useContentPathStore();
 
-  const [, setText] = useState<string | undefined>("");
+  const [text, setText] = useState<string | undefined>("");
 
   useEffect(() => {
     getEnv(path);
@@ -54,7 +54,7 @@ const BannerEditor: React.FC<BannerEditorProps> = ({ separator }) => {
           dateGroup={tabbedLogView.dateGroup}
           files={tabbedLogView.files}
           initialIndex={tabbedLogView.initialIndex}
-          delimiter={` ${separator} `}
+          delimiter={` ${delimiter} `}
         />
       );
     }
@@ -81,7 +81,7 @@ const BannerEditor: React.FC<BannerEditorProps> = ({ separator }) => {
     switch (fileExtension) {
       case "txt":
         return (
-          <TextFileViewer path={pathComplete} delimiter={` ${separator} `} />
+          <TextFileViewer path={pathComplete} delimiter={` ${delimiter} `} />
         );
       case "xlsx":
       case "xls":

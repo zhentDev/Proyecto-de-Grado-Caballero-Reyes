@@ -1,4 +1,5 @@
 use crate::MonitoredProjectPath;
+use std::sync::Arc;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::WindowEvent;
@@ -6,60 +7,180 @@ use tauri::{Emitter, Manager, State};
 use tokio::time::{sleep, Duration};
 use walkdir::WalkDir;
 
-pub fn init_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
+use crate::process::mode::{AppMode, AppModeState};
+pub fn init_tray(
+	app: &tauri::AppHandle,
+	app_mode_state: State<'_, AppModeState>,
+) -> tauri::Result<()> {
 	// Initial menu state
 	let initial_menu = {
-		let show =
-			tauri::menu::MenuItem::with_id(app, "show", "Ocultar ventana", true, None::<&str>)?;
-		let open_logs = MenuItem::with_id(app, "open_logs", "Abrir carpeta de logs", true, None::<&str>)?;
+		let show = MenuItem::with_id(app, "show", "Ocultar ventana", true, None::<&str>)?;
+		let open_logs = MenuItem::with_id(
+			app,
+			"open_logs",
+			"Abrir carpeta de logs",
+			true,
+			None::<&str>,
+		)?;
+		let set_emitter_mode =
+			MenuItem::with_id(app, "set_emitter_mode", "Modo Emisor", true, None::<&str>)?;
+		let set_receiver_mode = MenuItem::with_id(
+			app,
+			"set_receiver_mode",
+			"Modo Receptor",
+			true,
+			None::<&str>,
+		)?;
 		let quit = MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)?;
-		Menu::with_items(app, &[&show, &open_logs, &quit])?
+		Menu::with_items(
+			app,
+			&[
+				&show,
+				&open_logs,
+				&set_emitter_mode,
+				&set_receiver_mode,
+				&quit,
+			],
+		)?
 	};
 
-	    TrayIconBuilder::with_id("main-tray")		.on_tray_icon_event(|tray, event| match event {
-			TrayIconEvent::Click {
-				button: MouseButton::Left,
-				button_state: MouseButtonState::Up,
-				..
-			} => {
-				println!("left click pressed and released");
-				// in this example, let's show and focus the main window when the tray is clicked
-				let app = tray.app_handle();
-				if let Some(window) = app.get_webview_window("main") {
-					let _ = window.unminimize();
-					let _ = window.show();
-					let _ = window.set_focus();
+	let app_mode_state_for_menu_event =
+		Arc::new(std::sync::Mutex::new(*app_mode_state.0.lock().unwrap()));
+	let _app_mode_state_inner = *app_mode_state.0.lock().unwrap();
+	let _app_mode_state_for_tray_event = Arc::new(std::sync::Mutex::new(AppMode::Emitter));
+	let _app_mode_state_for_tray_event = app_mode_state.clone(); // Clone for on_tray_icon_event
+
+	TrayIconBuilder::with_id("main-tray")
+		.on_tray_icon_event(move |tray, event| {
+			// Move app_mode_state_for_tray_event into this closure
+			match event {
+				// Added match event
+				TrayIconEvent::Click {
+					button: MouseButton::Left,
+					button_state: MouseButtonState::Up,
+					..
+				} => {
+					println!("left click pressed and released");
+					// in this example, let's show and focus the main window when the tray is clicked
+					let app = tray.app_handle();
+					if let Some(window) = app.get_webview_window("main") {
+						let _ = window.unminimize();
+						let _ = window.show();
+						let _ = window.set_focus();
+					}
 				}
+				_ => {}
 			}
-			_ => {}
 		})
 		.menu(&initial_menu)
 		.icon(app.default_window_icon().unwrap().clone())
 		.on_menu_event(move |app, event| {
+			// Use app_mode_state_for_menu_event here
 			let window = app.get_webview_window("main").unwrap();
 			match event.id().as_ref() {
 				"show" => {
 					let new_menu = if window.is_visible().unwrap_or(false) {
 						window.hide().unwrap();
+						// Set AppMode to Emitter when window is hidden
+						let app_handle_clone = app.clone();
+						tauri::async_runtime::spawn(async move {
+							let app_mode_state = app_handle_clone.state::<AppModeState>();
+							*app_mode_state.0.lock().unwrap() = AppMode::Emitter;
+							let _ = app_handle_clone.emit("app_mode_changed", AppMode::Emitter);
+						});
+
 						// Create a menu for when the window is hidden
 						let show_item =
 							MenuItem::with_id(app, "show", "Mostrar ventana", true, None::<&str>)
 								.unwrap();
-                        let open_logs_item = MenuItem::with_id(app, "open_logs", "Abrir carpeta de logs", true, None::<&str>).unwrap();
+						let open_logs_item = MenuItem::with_id(
+							app,
+							"open_logs",
+							"Abrir carpeta de logs",
+							true,
+							None::<&str>,
+						)
+						.unwrap();
+						let set_emitter_mode_item = MenuItem::with_id(
+							app,
+							"set_emitter_mode",
+							"Modo Emisor",
+							true,
+							None::<&str>,
+						)
+						.unwrap();
+						let set_receiver_mode_item = MenuItem::with_id(
+							app,
+							"set_receiver_mode",
+							"Modo Receptor",
+							true,
+							None::<&str>,
+						)
+						.unwrap();
 						let quit_item =
 							MenuItem::with_id(app, "quit", "Salir", true, None::<&str>).unwrap();
-						Menu::with_items(app, &[&show_item, &open_logs_item, &quit_item]).unwrap()
+						Menu::with_items(
+							app,
+							&[
+								&show_item,
+								&open_logs_item,
+								&set_emitter_mode_item,
+								&set_receiver_mode_item,
+								&quit_item,
+							],
+						)
+						.unwrap()
 					} else {
 						window.show().unwrap();
 						window.set_focus().unwrap();
+						// Set AppMode to Receiver when window is shown
+						let app_handle_clone = app.clone();
+						tauri::async_runtime::spawn(async move {
+							let app_mode_state = app_handle_clone.state::<AppModeState>();
+							*app_mode_state.0.lock().unwrap() = AppMode::Receiver;
+							let _ = app_handle_clone.emit("app_mode_changed", AppMode::Receiver);
+						});
 						// Create a menu for when the window is visible
 						let show_item =
 							MenuItem::with_id(app, "show", "Ocultar ventana", true, None::<&str>)
 								.unwrap();
-                        let open_logs_item = MenuItem::with_id(app, "open_logs", "Abrir carpeta de logs", true, None::<&str>).unwrap();
+						let open_logs_item = MenuItem::with_id(
+							app,
+							"open_logs",
+							"Abrir carpeta de logs",
+							true,
+							None::<&str>,
+						)
+						.unwrap();
+						let set_emitter_mode_item = MenuItem::with_id(
+							app,
+							"set_emitter_mode",
+							"Modo Emisor",
+							true,
+							None::<&str>,
+						)
+						.unwrap();
+						let set_receiver_mode_item = MenuItem::with_id(
+							app,
+							"set_receiver_mode",
+							"Modo Receptor",
+							true,
+							None::<&str>,
+						)
+						.unwrap();
 						let quit_item =
 							MenuItem::with_id(app, "quit", "Salir", true, None::<&str>).unwrap();
-						Menu::with_items(app, &[&show_item, &open_logs_item, &quit_item]).unwrap()
+						Menu::with_items(
+							app,
+							&[
+								&show_item,
+								&open_logs_item,
+								&set_emitter_mode_item,
+								&set_receiver_mode_item,
+								&quit_item,
+							],
+						)
+						.unwrap()
 					};
 					// Set the new menu on the tray
 					app.tray_by_id("main-tray")
@@ -67,46 +188,71 @@ pub fn init_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
 						.set_menu(Some(new_menu))
 						.unwrap();
 				}
-                "open_logs" => {
-                    let state: State<MonitoredProjectPath> = app.state();
-                    let monitored_path = state.0.lock().unwrap();
+				"open_logs" => {
+					let state: State<MonitoredProjectPath> = app.state();
+					let monitored_path = state.0.lock().unwrap();
 
-                    if let Some(root) = &*monitored_path {
-                        println!("Buscando carpeta de logs en el proyecto monitoreado: {:?}", root);
-                        let mut log_path_found = None;
-                        let excluded_dirs = [".git", "node_modules", "target"];
-                        let walker = WalkDir::new(root).into_iter();
-                        for entry in walker.filter_entry(|e| {
-                            !excluded_dirs.contains(&e.file_name().to_string_lossy().as_ref())
-                        }) {
-                            let entry = match entry {
-                                Ok(e) => e,
-                                Err(_) => continue, // Skip entries we can't read
-                            };
+					if let Some(root) = &*monitored_path {
+						println!(
+							"Buscando carpeta de logs en el proyecto monitoreado: {:?}",
+							root
+						);
+						let mut log_path_found = None;
+						let excluded_dirs = [".git", "node_modules", "target"];
+						let walker = WalkDir::new(root).into_iter();
+						for entry in walker.filter_entry(|e| {
+							!excluded_dirs.contains(&e.file_name().to_string_lossy().as_ref())
+						}) {
+							let entry = match entry {
+								Ok(e) => e,
+								Err(_) => continue, // Skip entries we can't read
+							};
 
-                            if entry.file_type().is_dir() {
-                                let file_name = entry.file_name().to_string_lossy().to_lowercase();
-                                if file_name == "log" || file_name == "logs" {
-                                    log_path_found = Some(entry.path().to_path_buf());
-                                    break; // Found the first one, stop searching
-                                }
-                            }
-                        }
+							if entry.file_type().is_dir() {
+								let file_name = entry.file_name().to_string_lossy().to_lowercase();
+								if file_name == "log" || file_name == "logs" {
+									log_path_found = Some(entry.path().to_path_buf());
+									break; // Found the first one, stop searching
+								}
+							}
+						}
 
-                        if let Some(log_path) = log_path_found {
-                            println!("Carpeta de logs encontrada en: {:?}", log_path);
-                            if let Err(e) = opener::open(&log_path) {
-                                eprintln!("Error al abrir la carpeta de logs '{}': {}", log_path.display(), e);
-                            }
-                        } else {
-                            eprintln!("Carpeta de logs no encontrada en el proyecto.");
-                            let _ = app.emit("error_notification", "No se encontró la carpeta de logs en el proyecto actual.");
-                        }
-                    } else {
-                        eprintln!("No se ha abierto ningún proyecto para monitorear.");
-                        let _ = app.emit("error_notification", "Por favor, abre una carpeta de proyecto primero.");
-                    }
-                }
+						if let Some(log_path) = log_path_found {
+							println!("Carpeta de logs encontrada en: {:?}", log_path);
+							if let Err(e) = opener::open(&log_path) {
+								eprintln!(
+									"Error al abrir la carpeta de logs '{}': {}",
+									log_path.display(),
+									e
+								);
+							}
+						} else {
+							eprintln!("Carpeta de logs no encontrada en el proyecto.");
+							let _ = app.emit(
+								"error_notification",
+								"No se encontró la carpeta de logs en el proyecto actual.",
+							);
+						}
+					} else {
+						eprintln!("No se ha abierto ningún proyecto para monitorear.");
+						let _ = app.emit(
+							"error_notification",
+							"Por favor, abre una carpeta de proyecto primero.",
+						);
+					}
+				}
+				"set_emitter_mode" => {
+					let mut app_mode = app_mode_state_for_menu_event.lock().unwrap(); // Use app_mode_state_for_menu_event
+					*app_mode = AppMode::Emitter;
+					println!("Modo de aplicación cambiado a: {:?}", *app_mode);
+					let _ = app.emit("app_mode_changed", AppMode::Emitter);
+				}
+				"set_receiver_mode" => {
+					let mut app_mode = app_mode_state_for_menu_event.lock().unwrap(); // Use app_mode_state_for_menu_event
+					*app_mode = AppMode::Receiver;
+					println!("Modo de aplicación cambiado a: {:?}", *app_mode);
+					let _ = app.emit("app_mode_changed", AppMode::Receiver);
+				}
 				"quit" => {
 					println!("quit menu item was clicked");
 					app.exit(0);
@@ -131,14 +277,53 @@ pub fn init_window_event(app: &tauri::AppHandle) {
 				let window = app_handle.get_webview_window("main").unwrap();
 				window.hide().unwrap();
 
+				let app_handle_clone = app_handle.clone();
+				tauri::async_runtime::spawn(async move {
+					let app_mode_state = app_handle_clone.state::<AppModeState>();
+					*app_mode_state.0.lock().unwrap() = AppMode::Emitter;
+					let _ = app_handle_clone.emit("app_mode_changed", AppMode::Emitter);
+				});
 				// Rebuild the menu to update the text
 				let show_item =
 					MenuItem::with_id(&app_handle, "show", "Mostrar ventana", true, None::<&str>)
 						.unwrap();
-                let open_logs_item = MenuItem::with_id(&app_handle, "open_logs", "Abrir carpeta de logs", true, None::<&str>).unwrap();
+				let open_logs_item = MenuItem::with_id(
+					&app_handle,
+					"open_logs",
+					"Abrir carpeta de logs",
+					true,
+					None::<&str>,
+				)
+				.unwrap();
+				let set_emitter_mode_item = MenuItem::with_id(
+					&app_handle,
+					"set_emitter_mode",
+					"Modo Emisor",
+					true,
+					None::<&str>,
+				)
+				.unwrap();
+				let set_receiver_mode_item = MenuItem::with_id(
+					&app_handle,
+					"set_receiver_mode",
+					"Modo Receptor",
+					true,
+					None::<&str>,
+				)
+				.unwrap();
 				let quit_item =
 					MenuItem::with_id(&app_handle, "quit", "Salir", true, None::<&str>).unwrap();
-				let menu = Menu::with_items(&app_handle, &[&show_item, &open_logs_item, &quit_item]).unwrap();
+				let menu = Menu::with_items(
+					&app_handle,
+					&[
+						&show_item,
+						&open_logs_item,
+						&set_emitter_mode_item,
+						&set_receiver_mode_item,
+						&quit_item,
+					],
+				)
+				.unwrap();
 
 				app_handle
 					.tray_by_id("main-tray")

@@ -1,7 +1,10 @@
+pub mod background;
 pub mod excel;
 pub mod getpath;
 pub mod logs;
+pub mod mode;
+pub mod state_sync;
 pub mod system_info;
 pub mod r#try;
 pub mod watch;
-pub mod state_sync;
+pub mod watch_file;

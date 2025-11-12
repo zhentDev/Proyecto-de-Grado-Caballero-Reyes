@@ -9,7 +9,7 @@ import { validateProyectExists } from "./api/db";
 import BannerEditor from "./components/BannerEditor";
 import { FormProyects } from "./components/FormProyects";
 import Menu from "./components/Menu/Menu";
-import SystemInfoBox from "./components/SystemInfoBox/SystemInfoBox"; // Added import
+import SystemInfoBox from "./components/SystemInfoBox/SystemInfoBox";
 import { useContentPathStore } from "./store/contentPathStore";
 
 function App() {
@@ -30,18 +30,21 @@ function App() {
         console.error("Failed to set window title", e);
       }
     };
-    setInitialTitle();
+    // setInitialTitle();
 
     const checkProject = async () => {
       try {
         const result = await validateProyectExists();
+
+        const delimiterValue = result.delimiter ? result.delimiter : "";
+
+        setDelimiter(delimiterValue);
         const newPath = result.path || null;
         setPathMain(newPath);
         if (newPath) {
           await invoke("set_monitored_project", { path: newPath });
           await invoke("listen_for_directory_changes", { path: newPath });
         }
-        setDelimiter(result.separator || "");
       } catch (error) {
         console.error("Error validating project existence:", error);
       } finally {
@@ -59,8 +62,6 @@ function App() {
     return <div>Loading app state...</div>;
   }
 
-  console.log(path);
-
   return (
     <div className="container-layout w-full h-full">
       <Routes>
@@ -72,12 +73,12 @@ function App() {
           path="/editor"
           element={
             <div className="flex w-full h-full">
-              <div className="bg-black text-black min-h-screen flex flex-col">
+              <div className="bg-black text-black min-h-screen flex flex-col border-r border-gray-700">
                 <Menu />
                 <SystemInfoBox />
               </div>
               <div className="flex justify-center items-center editor w-full h-full">
-                <BannerEditor separator={delimiter} />
+                <BannerEditor delimiter={delimiter} />
               </div>
             </div>
           }

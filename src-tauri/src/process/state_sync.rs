@@ -38,7 +38,7 @@ pub async fn listen_for_directory_changes(path: String, window: Window) -> Resul
 					| EventKind::Remove(_)
 					| EventKind::Modify(ModifyKind::Name(_)) => {
 						println!("Cambio en el directorio detectado: {:?}", event);
-						if let Err(e) = window.emit("directory-changed", {}) {
+						if let Err(e) = window.emit("directory-changed", ()) {
 							eprintln!("Error al emitir el evento directory-changed: {}", e);
 						}
 					}
