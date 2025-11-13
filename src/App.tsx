@@ -32,7 +32,6 @@ function App() {
         setPathMain(newPath);
         if (newPath) {
           await invoke("set_monitored_project", { path: newPath });
-          await invoke("listen_for_directory_changes", { path: newPath });
         }
       } catch (error) {
         console.error("Error validating project existence:", error);

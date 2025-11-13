@@ -140,8 +140,7 @@ pub fn run() {
 			process::excel::guardar_excel,
 			process::system_info::get_system_parameters,
 			process::system_info::get_system_info_formatted,
-			process::state_sync::set_monitored_project,
-			process::state_sync::listen_for_directory_changes
+			process::state_sync::set_monitored_project
 		])
 		.run(tauri::generate_context!())
 		.expect("error while running tauri application");
