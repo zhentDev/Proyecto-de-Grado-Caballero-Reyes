@@ -81,14 +81,6 @@ pub fn init_tray(
 				"show" => {
 					let new_menu = if window.is_visible().unwrap_or(false) {
 						window.hide().unwrap();
-						// Set AppMode to Emitter when window is hidden
-						let app_handle_clone = app.clone();
-						tauri::async_runtime::spawn(async move {
-							let app_mode_state = app_handle_clone.state::<AppModeState>();
-							*app_mode_state.0.lock().unwrap() = AppMode::Emitter;
-							let _ = app_handle_clone.emit("app_mode_changed", AppMode::Emitter);
-						});
-
 						// Create a menu for when the window is hidden
 						let show_item =
 							MenuItem::with_id(app, "show", "Mostrar ventana", true, None::<&str>)
@@ -133,13 +125,6 @@ pub fn init_tray(
 					} else {
 						window.show().unwrap();
 						window.set_focus().unwrap();
-						// Set AppMode to Receiver when window is shown
-						let app_handle_clone = app.clone();
-						tauri::async_runtime::spawn(async move {
-							let app_mode_state = app_handle_clone.state::<AppModeState>();
-							*app_mode_state.0.lock().unwrap() = AppMode::Receiver;
-							let _ = app_handle_clone.emit("app_mode_changed", AppMode::Receiver);
-						});
 						// Create a menu for when the window is visible
 						let show_item =
 							MenuItem::with_id(app, "show", "Ocultar ventana", true, None::<&str>)
@@ -277,12 +262,6 @@ pub fn init_window_event(app: &tauri::AppHandle) {
 				let window = app_handle.get_webview_window("main").unwrap();
 				window.hide().unwrap();
 
-				let app_handle_clone = app_handle.clone();
-				tauri::async_runtime::spawn(async move {
-					let app_mode_state = app_handle_clone.state::<AppModeState>();
-					*app_mode_state.0.lock().unwrap() = AppMode::Emitter;
-					let _ = app_handle_clone.emit("app_mode_changed", AppMode::Emitter);
-				});
 				// Rebuild the menu to update the text
 				let show_item =
 					MenuItem::with_id(&app_handle, "show", "Mostrar ventana", true, None::<&str>)

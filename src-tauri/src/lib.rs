@@ -126,20 +126,6 @@ pub fn run() {
 				.accelerator("Ctrl+Shift+T")
 				.build(app)?;
 
-			// Emit initial AppMode::Receiver to start the MQTT receiver
-			let app_handle_clone = app.app_handle().clone();
-			tauri::async_runtime::spawn(async move {
-				let _ = app_handle_clone.emit("app_mode_changed", AppMode::Receiver);
-
-				// Add a 5-second delay and then hide the window
-				tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
-				if let Some(window) = app_handle_clone.get_webview_window("main") {
-					let _ = window.hide();
-					// Also emit AppMode::Emitter when the window is hidden automatically
-					let _ = app_handle_clone.emit("app_mode_changed", AppMode::Emitter);
-				}
-			});
-
 			Ok(())
 		})
 		.invoke_handler(tauri::generate_handler![
