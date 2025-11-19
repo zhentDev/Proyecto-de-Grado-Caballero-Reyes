@@ -212,78 +212,106 @@ pub async fn start_watcher(
 
 			if let Ok(event) = res {
 				match event.kind {
-					notify::EventKind::Create(_)
-					| notify::EventKind::Modify(_)
-					| notify::EventKind::Remove(_) => {
-						println!("✅ Cambio detectado: {:?}", event.paths);
-						if let Err(e) = app_handle_clone_inner.emit("directory-changed", ()) {
-							eprintln!("Error emitiendo directory-changed: {}", e);
-						}
-
-						for path in event.paths {
-							if let Some(extension) = path.extension() {
-								if extension == "log" || extension == "txt" {
-									let event_type = match event.kind {
-										notify::EventKind::Create(_) => "created",
-										notify::EventKind::Modify(_) => "modified",
-										notify::EventKind::Remove(_) => "removed",
-										_ => "unknown", // Should not happen with the current match
-									};
-
-									let relative_path = path
-										.strip_prefix(&root_clone_inner)
-										.unwrap_or(&path)
-										.to_string_lossy()
-										.replace("\\", "/"); // Normalize path separators
-
-									let file_content = if event_type != "removed" {
-										get_last_line(&path).unwrap_or_default()
-									} else {
-										"".to_string()
-									};
-
-									let payload = serde_json::json!({
-										"event_type": event_type,
-										"path": format!("{}/{}", root_clone_inner.file_name().unwrap().to_string_lossy(), relative_path),
-										"content": file_content,
-									})
-									.to_string();
-
-									// Publish the message
-									// Clone the client, topic and payload per-iteration so each spawned task owns its data
-									let mut client_for_publish = client_clone.clone();
-									let topic = format!(
-										"project/{}/logs/{}",
-										root_clone_inner.file_name().unwrap().to_string_lossy(),
-										relative_path
-									);
-									let _topic_clone = topic.clone();
-									let payload_clone = payload.clone();
-
-									let topic_clone = topic.clone();
-
-									tauri::async_runtime::spawn(async move {
-										let publish_result = client_for_publish.publish(
-											topic_clone.clone(),
-											QoS::AtLeastOnce,
-											false,
-											payload_clone.as_bytes(),
-										); // Await the publish call
-
-										if let Err(e) = publish_result {
-											eprintln!("Error publicando mensaje MQTT: {}", e);
-										} else {
-											println!(
-												"✅ Publicado MQTT: {} -> {}",
-												topic_clone, payload_clone
-											);
-										}
-									});
+					notify::EventKind::Create(_) => {
+						for path in &event.paths {
+							if let Some(path_str) = path.to_str() {
+								if let Err(e) = app_handle_clone_inner.emit("file-created", path_str) {
+									eprintln!("Error emitiendo file-created: {}", e);
 								}
 							}
 						}
 					}
-					_ => {} // Ignorar otros tipos de eventos
+					notify::EventKind::Remove(_) => {
+						for path in &event.paths {
+							if let Some(path_str) = path.to_str() {
+								if let Err(e) = app_handle_clone_inner.emit("file-deleted", path_str) {
+									eprintln!("Error emitiendo file-deleted: {}", e);
+								}
+							}
+						}
+					}
+					notify::EventKind::Modify(_) => {
+						if let Err(e) = app_handle_clone_inner.emit("directory-changed", ()) {
+							eprintln!("Error emitiendo directory-changed: {}", e);
+						}
+					}
+					_ => {} // Ignore other event kinds for the main UI refresh
+				}
+
+				// Conditionally handle MQTT publishing based on AppMode
+				let app_mode_state =
+					app_handle_clone_inner.state::<crate::process::mode::AppModeState>();
+				let current_mode = *app_mode_state.0.lock().unwrap();
+
+				if matches!(current_mode, crate::process::mode::AppMode::Emitter) {
+					match event.kind {
+						notify::EventKind::Create(_)
+						| notify::EventKind::Modify(_)
+						| notify::EventKind::Remove(_) => {
+							println!("✅ Cambio detectado en modo Emitter: {:?}", event.paths);
+
+							for path in event.paths {
+								if let Some(extension) = path.extension() {
+									if extension == "log" || extension == "txt" {
+										let event_type = match event.kind {
+											notify::EventKind::Create(_) => "created",
+											notify::EventKind::Modify(_) => "modified",
+											notify::EventKind::Remove(_) => "removed",
+											_ => "unknown",
+										};
+
+										let relative_path = path
+											.strip_prefix(&root_clone_inner)
+											.unwrap_or(&path)
+											.to_string_lossy()
+											.replace("\\", "/");
+
+										let file_content = if event_type != "removed" {
+											get_last_line(&path).unwrap_or_default()
+										} else {
+											"".to_string()
+										};
+
+										let payload = serde_json::json!({
+											"event_type": event_type,
+											"path": format!("{}/{}", root_clone_inner.file_name().unwrap().to_string_lossy(), relative_path),
+											"content": file_content,
+										})
+										.to_string();
+
+										let mut client_for_publish = client_clone.clone();
+										let topic = format!(
+											"project/{}/logs/{}",
+											root_clone_inner.file_name().unwrap().to_string_lossy(),
+											relative_path
+										);
+
+										let topic_clone = topic.clone();
+										let payload_clone = payload.clone();
+
+										tauri::async_runtime::spawn(async move {
+											let publish_result = client_for_publish.publish(
+												topic_clone.clone(),
+												QoS::AtLeastOnce,
+												false,
+												payload_clone.as_bytes(),
+											);
+
+											if let Err(e) = publish_result {
+												eprintln!("Error publicando mensaje MQTT: {}", e);
+											} else {
+												println!(
+													"✅ Publicado MQTT: {} -> {}",
+													topic_clone, payload_clone
+												);
+											}
+										});
+									}
+								}
+							}
+						}
+						_ => {} // Ignorar otros tipos de eventos
+					}
 				}
 			}
 		};

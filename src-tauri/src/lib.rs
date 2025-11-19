@@ -13,7 +13,7 @@ use crate::process::background::MqttReceiverStopper;
 use crate::process::mode::{AppMode, AppModeState};
 use crate::process::watch::WatcherStopper; // Import MqttReceiverStopper
 
-use tauri::{menu::MenuItemBuilder, Emitter, Listener};
+use tauri::{menu::MenuItemBuilder, Listener};
 
 // Estado para guardar la ruta del proyecto monitoreado
 pub struct MonitoredProjectPath(pub Mutex<Option<PathBuf>>);
@@ -85,27 +85,6 @@ pub fn run() {
 				process::background::stop_receiver(&app_handle); // Stop MQTT receiver
 
 				match current_mode {
-					AppMode::Emitter => {
-						let (tx, rx) = mpsc::channel(1);
-						let watcher_stopper_state = app_handle.state::<WatcherStopper>();
-						*watcher_stopper_state.0.lock().unwrap() = Some(tx);
-
-						let app_handle_for_watcher = app_handle.clone();
-						tauri::async_runtime::spawn(async move {
-							let monitored_project_path =
-								app_handle_for_watcher.state::<MonitoredProjectPath>();
-							let app_handle_for_watcher_clone = app_handle_for_watcher.clone();
-							if let Err(e) = process::watch::start_watcher(
-								app_handle_for_watcher_clone,
-								monitored_project_path,
-								rx,
-							)
-							.await
-							{
-								eprintln!("Error starting watcher: {}", e);
-							}
-						});
-					}
 					AppMode::Receiver => {
 						let (tx, rx) = mpsc::channel(1);
 						let receiver_stopper_state = app_handle.state::<MqttReceiverStopper>();
@@ -116,7 +95,7 @@ pub fn run() {
 							process::background::init(app_handle_for_receiver, rx).await;
 						});
 					}
-					AppMode::None => {
+					AppMode::Emitter | AppMode::None => {
 						// No specific action needed, services are already stopped
 					}
 				}

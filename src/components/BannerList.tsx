@@ -53,6 +53,47 @@ function BannerList() {
         };
     }, [loadFilesFolders]);
 
+    // Efecto para manejar la creación de archivos y auto-seleccionar la nueva pestaña
+    useEffect(() => {
+		const unlisten = listen<string>("file-created", (event) => {
+			const newFilePath = event.payload;
+			const logFileRegex = /^(Log-\d{2}-\d{2}-\d{4}) (\d{6})\.txt$/i;
+
+			// Extraer solo el nombre del archivo de la ruta
+			const newFileName = newFilePath.split("\\").pop()?.split("/").pop();
+			if (!newFileName) return;
+
+			const match = newFileName.match(logFileRegex);
+			if (!match) return;
+
+			const newFileDateGroup = match[1];
+			const timeName = match[2];
+
+			const { tabbedLogView, showTabbedLogView } = useContentPathStore.getState();
+
+			if (tabbedLogView && tabbedLogView.dateGroup === newFileDateGroup) {
+				const newFileInfo = { name: timeName, path: newFilePath };
+				const updatedFiles = [...tabbedLogView.files, newFileInfo];
+
+				// Ordenar por nombre (que es la hora)
+				updatedFiles.sort((a, b) => a.name.localeCompare(b.name));
+
+				const newIndex = updatedFiles.findIndex((f) => f.path === newFilePath);
+
+				showTabbedLogView({
+					dateGroup: tabbedLogView.dateGroup,
+					files: updatedFiles,
+					initialIndex: newIndex,
+					delimiter: tabbedLogView.delimiter,
+				});
+			}
+		});
+
+		return () => {
+			unlisten.then((fn) => fn());
+		};
+	}, []);
+
 
     return (
         <div className="h-full overflow-y-auto tree-container">
@@ -64,6 +105,7 @@ function BannerList() {
                             item={item as any}
                             currentPath={path}
                             level={0}
+                            onActionComplete={loadFilesFolders}
                         />
                     ))}
                 </div>

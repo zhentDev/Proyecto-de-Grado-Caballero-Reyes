@@ -26,9 +26,15 @@ interface TreeItemProps {
 	item: FolderItem;
 	currentPath: string;
 	level?: number; // Para manejar la indentación por niveles
+	onActionComplete: () => void;
 }
 
-function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
+function TreeItem({
+	item,
+	currentPath,
+	level = 0,
+	onActionComplete,
+}: TreeItemProps) {
 	const {
 		selectedFile,
 		setSelectedFile,
@@ -191,6 +197,7 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
           },
         }
       );
+      onActionComplete(); // Refresh the list
     } catch (error) {
       console.error(`Error al eliminar ${itemType}:`, error);
       toast.error(`Error al eliminar ${itemType}`, {
@@ -276,30 +283,39 @@ function TreeItem({ item, currentPath, level = 0 }: TreeItemProps) {
         )}
       </div>
 
-      {isFolder && (
-        <div
-          					className={`tree-children transition-all duration-500 ease-in-out overflow-hidden ${
-          						isExpanded
-          							? "max-h-[9999px] opacity-100 tree-expanded"
-          							: "max-h-0 opacity-0 tree-collapsed"
-          					}`}        >
-          {isExpanded && item.children.length > 0 && (
-            <div className="border-l border-gray-600 ml-2 pl-2">
-              {item.children.map((child) => {
-                const childPath = `${currentPath}/${itemName}`;
-                return (
-                  <TreeItem
-                    key={child.name || "unknown"}
-                    item={child}
-                    currentPath={childPath}
-                    level={level + 1}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+			{isFolder && (
+				<div
+					className={`tree-children transition-all duration-500 ease-in-out overflow-hidden ${
+						isExpanded
+							? "max-h-screen opacity-100 tree-expanded"
+							: "max-h-0 opacity-0 tree-collapsed"
+					}`}
+				>
+					{isExpanded && sortedChildren.length > 0 && (
+						<div
+							className={twMerge(
+								"border-l border-gray-600 ml-2 pl-2",
+								isFolder &&
+									item.name.toLowerCase() === "logs" &&
+									"max-h-[500px] overflow-y-auto",
+							)}
+						>
+							{sortedChildren.map((child) => {
+								const childPath = `${currentPath}/${itemName}`;
+								return (
+									<TreeItem
+										key={child.name || "unknown"}
+										item={child}
+										currentPath={childPath}
+										level={level + 1}
+										onActionComplete={onActionComplete}
+									/>
+								);
+							})}
+						</div>
+					)}
+				</div>
+			)}
     </div>
   );
 }
