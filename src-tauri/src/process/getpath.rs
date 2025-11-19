@@ -28,6 +28,7 @@ pub struct Item {
     pub is_file: bool,
     pub is_directory: bool,
     pub children: Vec<Item>,
+    pub modified: u64,
 }
 
 #[command]
@@ -47,6 +48,13 @@ fn read_directory_recursively(path: &Path) -> Result<Vec<Item>, String> {
             let path = entry.path();
             let name = entry.file_name().to_string_lossy().into_owned();
 
+            let metadata = entry.metadata().map_err(|e| e.to_string())?;
+            let modified_time = metadata.modified().map_err(|e| e.to_string())?;
+            let modified = modified_time
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(|e| e.to_string())?
+                .as_secs();
+
             if path.is_dir() {
                 let children = read_directory_recursively(&path)?;
                 Ok(Item {
@@ -55,6 +63,7 @@ fn read_directory_recursively(path: &Path) -> Result<Vec<Item>, String> {
                     is_file: false,
                     is_directory: true,
                     children,
+                    modified,
                 })
             } else {
                 Ok(Item {
@@ -63,6 +72,7 @@ fn read_directory_recursively(path: &Path) -> Result<Vec<Item>, String> {
                     is_file: true,
                     is_directory: false,
                     children: vec![],
+                    modified,
                 })
             }
         })

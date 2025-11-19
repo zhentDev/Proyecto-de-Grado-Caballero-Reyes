@@ -10,6 +10,7 @@ interface FolderItem {
     is_file: boolean;
     is_directory: boolean;
     children: FolderItem[];
+    modified: number;
 }
 
 function BannerList() {

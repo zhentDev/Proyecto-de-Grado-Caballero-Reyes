@@ -177,14 +177,21 @@ function TextFileViewer({ path, delimiter }: TextFileViewerProps) {
     };
     // Depend only on the length to avoid unnecessary re-runs when the array
     // reference changes but its length remains the same.
-  }, [logData.length]);
+  }, [logData]);
 
   useEffect(() => {
     if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
-      console.log("Scroll", containerRef.current.scrollHeight);
+      // Use a timeout to ensure the DOM has been updated before scrolling
+      const timer = setTimeout(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+          console.log("Scroll to bottom:", containerRef.current.scrollHeight);
+        }
+      }, 100); // 100ms delay to be safe
+
+      return () => clearTimeout(timer); // Cleanup the timer
     }
-  }, [logData.length]);
+  }, [logData]);
 
   useEffect(() => {
     const handleMouseUp = () => {
