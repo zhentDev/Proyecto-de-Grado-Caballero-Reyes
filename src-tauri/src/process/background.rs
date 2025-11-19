@@ -30,7 +30,8 @@ pub async fn init(app_handle: AppHandle, mut rx: mpsc::Receiver<()>) {
 		println!("MQTT Receiver: Attempting to connect to broker...");
 
 		// --- TLS and Authentication Setup (using system certificates) ---
-		let broker_url = "3206f9b95f01467885968e05da78c36c.s1.eu.hivemq.cloud";
+		// let broker_url = "3206f9b95f01467885968e05da78c36c.s1.eu.hivemq.cloud";
+		let broker_url = "b890714b58bc47ab852b24ea4753227b.s1.eu.hivemq.cloud";
 		let broker_port = 8883;
 		// IMPORTANT: Replace with your actual username and password
 		let mqtt_user = "zhent";
@@ -119,11 +120,13 @@ pub async fn init(app_handle: AppHandle, mut rx: mpsc::Receiver<()>) {
 									let monitored_project_path_state = app_handle_for_events.state::<crate::MonitoredProjectPath>();
 									let root_path_guard = monitored_project_path_state.0.lock().unwrap();
 
-									if let Some(root) = root_path_guard.as_ref() {
-										let target_path = root.join(path);
-
-								match event_type {
-									"created" | "modified" => {
+																		if let Some(root) = root_path_guard.as_ref() {
+																			let path_to_join = path
+																				.strip_prefix(root.file_name().unwrap_or_default())
+																				.unwrap_or(&path);
+																			let target_path = root.join(path_to_join);
+									
+																			match event_type {									"created" | "modified" => {
 										if let Some(parent) = target_path.parent() {
 											if let Err(e) = fs::create_dir_all(parent) {
 												eprintln!("MQTT Receiver: Failed to create parent directories for {}: {}", target_path.display(), e);
@@ -139,7 +142,7 @@ pub async fn init(app_handle: AppHandle, mut rx: mpsc::Receiver<()>) {
 											}
 										};
 
-										if let Err(e) = std::io::Write::write_all(&mut file, format!("\n{}", content).as_bytes()) {
+										if let Err(e) = std::io::Write::write_all(&mut file, format!("{}\n", content.trim_end_matches('\n')).as_bytes()) {
 											eprintln!("MQTT Receiver: Failed to append to file {}: {}", target_path.display(), e);
 										} else {
 											println!("MQTT Receiver: Successfully {} file {}", event_type, target_path.display());

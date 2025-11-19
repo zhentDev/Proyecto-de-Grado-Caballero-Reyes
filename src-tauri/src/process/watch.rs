@@ -88,7 +88,8 @@ pub async fn start_watcher(
 	println!("MQTT: Setting up client options...");
 
 	// --- TLS and Authentication Setup (using system certificates) ---
-	let broker_url = "3206f9b95f01467885968e05da78c36c.s1.eu.hivemq.cloud";
+	// let broker_url = "3206f9b95f01467885968e05da78c36c.s1.eu.hivemq.cloud";
+	let broker_url = "b890714b58bc47ab852b24ea4753227b.s1.eu.hivemq.cloud";
 	let broker_port = 8883;
 	// IMPORTANT: Replace with your actual username and password
 	let mqtt_user = "zhent";
