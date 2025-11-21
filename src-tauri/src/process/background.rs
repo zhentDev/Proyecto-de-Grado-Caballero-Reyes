@@ -108,6 +108,7 @@ pub async fn init(app_handle: AppHandle, mut rx: mpsc::Receiver<()>) {
 							println!("MQTT Receiver: Received message on topic '{}': {}", topic, payload_str);
 
 							if let Ok(json_payload) = serde_json::from_str::<Value>(&payload_str) {
+								// This is a file event, process it.
 								if let (Some(event_type), Some(mqtt_path_str), Some(content)) = (
 									json_payload["event_type"].as_str(),
 									json_payload["path"].as_str(),
@@ -120,55 +121,56 @@ pub async fn init(app_handle: AppHandle, mut rx: mpsc::Receiver<()>) {
 									let monitored_project_path_state = app_handle_for_events.state::<crate::MonitoredProjectPath>();
 									let root_path_guard = monitored_project_path_state.0.lock().unwrap();
 
-																		if let Some(root) = root_path_guard.as_ref() {
-																			let path_to_join = path
-																				.strip_prefix(root.file_name().unwrap_or_default())
-																				.unwrap_or(&path);
-																			let target_path = root.join(path_to_join);
-									
-																			match event_type {									"created" | "modified" => {
-										if let Some(parent) = target_path.parent() {
-											if let Err(e) = fs::create_dir_all(parent) {
-												eprintln!("MQTT Receiver: Failed to create parent directories for {}: {}", target_path.display(), e);
-												continue;
+									if let Some(root) = root_path_guard.as_ref() {
+										let path_to_join = path
+											.strip_prefix(root.file_name().unwrap_or_default())
+											.unwrap_or(&path);
+										let target_path = root.join(path_to_join);
+								
+										match event_type {
+											"created" | "modified" => {
+												if let Some(parent) = target_path.parent() {
+													if let Err(e) = fs::create_dir_all(parent) {
+														eprintln!("MQTT Receiver: Failed to create parent directories for {}: {}", target_path.display(), e);
+														break; // Skip to the next MQTT event
+													}
+												}
+					
+												let mut file = match OpenOptions::new().create(true).append(true).open(&target_path) {
+													Ok(f) => f,
+													Err(e) => {
+														eprintln!("MQTT Receiver: Failed to open file {}: {}", target_path.display(), e);
+														return; // Skip to the next MQTT event
+													}
+												};
+												if let Err(e) = std::io::Write::write_all(&mut file, format!("{}\n", content.trim_end_matches('\n')).as_bytes()) {
+													eprintln!("MQTT Receiver: Failed to append to file {}: {}", target_path.display(), e);
+												} else {
+													println!("MQTT Receiver: Successfully {} file {}", event_type, target_path.display());
+													let _ = app_handle_for_events.emit("file_updated", target_path.to_string_lossy().to_string());
+												}
+											},
+											"removed" => {
+												if let Err(e) = fs::remove_file(&target_path) {
+													eprintln!("MQTT Receiver: Failed to remove file {}: {}", target_path.display(), e);
+												} else {
+													println!("MQTT Receiver: Successfully removed file {}", target_path.display());
+													let _ = app_handle_for_events.emit("file_updated", target_path.to_string_lossy().to_string());
+												}
+											},
+											_ => {
+												eprintln!("MQTT Receiver: Unknown event type: {}", event_type);
 											}
 										}
-
-										let mut file = match OpenOptions::new().create(true).append(true).open(&target_path) {
-											Ok(f) => f,
-											Err(e) => {
-												eprintln!("MQTT Receiver: Failed to open file {}: {}", target_path.display(), e);
-												continue;
-											}
-										};
-
-										if let Err(e) = std::io::Write::write_all(&mut file, format!("{}\n", content.trim_end_matches('\n')).as_bytes()) {
-											eprintln!("MQTT Receiver: Failed to append to file {}: {}", target_path.display(), e);
-										} else {
-											println!("MQTT Receiver: Successfully {} file {}", event_type, target_path.display());
-											let _ = app_handle_for_events.emit("file_updated", target_path.to_string_lossy().to_string());
-										}
-									},
-									"removed" => {
-										if let Err(e) = fs::remove_file(&target_path) {
-											eprintln!("MQTT Receiver: Failed to remove file {}: {}", target_path.display(), e);
-										} else {
-											println!("MQTT Receiver: Successfully removed file {}", target_path.display());
-											let _ = app_handle_for_events.emit("file_updated", target_path.to_string_lossy().to_string());
-										}
-									},
-									_ => {
-										eprintln!("MQTT Receiver: Unknown event type: {}", event_type);
-									}
-								}
 									} else {
 										eprintln!("MQTT Receiver: No monitored project path set for receiver. Cannot synchronize files.");
 									}
 								} else {
-									eprintln!("MQTT Receiver: Malformed payload: {}", payload_str);
+									eprintln!("MQTT Receiver: Malformed JSON payload: {}", payload_str);
 								}
 							} else {
-								eprintln!("MQTT Receiver: Failed to parse JSON payload: {}", payload_str);
+								// This is NOT a file event (e.g., connection status), just log it.
+								println!("MQTT Receiver: Ignoring non-JSON message on topic '{}'", topic);
 							}
 						},
 						Ok(Event::Incoming(Packet::PingResp)) => {

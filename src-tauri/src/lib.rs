@@ -95,7 +95,24 @@ pub fn run() {
 							process::background::init(app_handle_for_receiver, rx).await;
 						});
 					}
-					AppMode::Emitter | AppMode::None => {
+					AppMode::Emitter => {
+						// Create a channel to stop the watcher
+						let (tx, rx) = mpsc::channel(1);
+						// Store the sender in the WatcherStopper state
+						let watcher_stopper_state = app_handle.state::<WatcherStopper>();
+						*watcher_stopper_state.0.lock().unwrap() = Some(tx);
+
+						let app_handle_for_watcher = app_handle.clone();
+						// Spawn the watcher task
+						tauri::async_runtime::spawn(async move {
+							if let Err(e) =
+								process::watch::start_watcher(app_handle_for_watcher, rx).await
+							{
+								eprintln!("Failed to start file watcher: {}", e);
+							}
+						});
+					}
+					AppMode::None => {
 						// No specific action needed, services are already stopped
 					}
 				}

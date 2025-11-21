@@ -6,7 +6,7 @@ use rustls_native_certs;
 use std::fs::File;
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc;
 
 use crate::MonitoredProjectPath;
@@ -79,9 +79,9 @@ fn get_last_line(path: &Path) -> Option<String> {
 
 pub async fn start_watcher(
 	app_handle: AppHandle,
-	monitored_project_path: State<'_, MonitoredProjectPath>,
 	mut rx: mpsc::Receiver<()>,
 ) -> Result<(), String> {
+	let monitored_project_path = app_handle.state::<MonitoredProjectPath>();
 	println!("File Watcher: Initializing...");
 
 	// MQTT Client Setup
