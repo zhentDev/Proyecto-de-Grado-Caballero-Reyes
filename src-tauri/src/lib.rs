@@ -6,17 +6,17 @@ use once_cell::sync::Lazy;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::Instant;
-use tauri::{path::BaseDirectory::AppConfig, Manager}; // Removed State
+use tauri::{path::BaseDirectory::AppConfig, Manager};
 use tokio::sync::mpsc;
 
-use crate::process::background::MqttReceiverStopper;
+use crate::process::background::{MqttReceiverListener, MqttReceiverStopper};
 use crate::process::mode::{AppMode, AppModeState};
-use crate::process::watch::WatcherStopper; // Import MqttReceiverStopper
+use crate::process::watch::WatcherStopper;
 
 use tauri::{menu::MenuItemBuilder, Listener};
 
-// Estado para guardar la ruta del proyecto monitoreado
-pub struct MonitoredProjectPath(pub Mutex<Option<PathBuf>>);
+// State to hold the path for the active project selected in the UI
+pub struct ActiveProjectPath(pub Mutex<Option<PathBuf>>);
 
 pub static START_TIME: Lazy<Instant> = Lazy::new(Instant::now);
 
@@ -24,10 +24,11 @@ pub static START_TIME: Lazy<Instant> = Lazy::new(Instant::now);
 pub fn run() {
 	let _ = *START_TIME;
 	tauri::Builder::default()
-		.manage(MonitoredProjectPath(Mutex::new(None))) // Añadir el estado manejado
+		.manage(ActiveProjectPath(Mutex::new(None)))
 		.manage(AppModeState(Mutex::new(AppMode::None))) // Add this line
 		.manage(WatcherStopper::default()) // Manage WatcherStopper
 		.manage(MqttReceiverStopper::default()) // Manage MqttReceiverStopper
+		.manage(MqttReceiverListener::default())
 		.plugin(
 			tauri_plugin_sql::Builder::default()
 				.add_migrations(
