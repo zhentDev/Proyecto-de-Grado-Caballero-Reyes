@@ -57,7 +57,7 @@ export async function getProyects() {
 
 export async function getProyect(name: string) {
   const db = await getInstance();
-  const result = await db.select("SELECT * FROM proyects WHERE name = ?", [
+  const result = await db.select("SELECT * FROM proyects WHERE TRIM(LOWER(name)) = TRIM(LOWER(?))", [
     name,
   ]);
   return result;

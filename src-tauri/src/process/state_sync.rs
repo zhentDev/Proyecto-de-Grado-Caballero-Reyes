@@ -1,26 +1,24 @@
-use crate::{MonitoredProjectPath, WatcherStopper};
+use crate::ActiveProjectPath;
 use std::path::PathBuf;
-use tauri::{command, AppHandle, State};
+use tauri::{command, State};
 
 #[command]
 pub fn set_monitored_project(
 	path: String,
-	project_path_state: State<'_, MonitoredProjectPath>,
-	_watcher_stopper: State<'_, WatcherStopper>,
-	_app_handle: AppHandle,
+	active_path_state: State<'_, ActiveProjectPath>,
 ) -> Result<(), String> {
 	let path_buf = PathBuf::from(&path);
 
-	if !path_buf.exists() {
-		return Err(format!("El directorio proporcionado no existe: {}", path));
+	if !path_buf.exists() || !path_buf.is_dir() {
+		return Err(format!("El directorio proporcionado no existe o no es válido: {}", path));
 	}
 
-	// Update the project path state
-	*project_path_state.0.lock().unwrap() = Some(path_buf);
-	println!("Ruta del proyecto monitoreado actualizada a: {}", path);
+	// Set the active path for the emitter/UI
+	let mut active_path = active_path_state.0.lock().unwrap();
+	*active_path = Some(path_buf.clone());
+	println!("Ruta activa para el emisor actualizada a: {}", path);
 
-	// The watcher will be started/stopped by the app_mode_changed listener
-	// when the frontend emits the app_mode_changed event after setting the path.
-	// This prevents redundant restarts of the watcher.
+    // The frontend is responsible for ensuring this project is in the DB.
+    // This command just sets the active state for the backend.
 	Ok(())
 }

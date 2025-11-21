@@ -1,15 +1,23 @@
-import { invoke } from "@tauri-apps/api/core";
 import { Toaster } from "react-hot-toast";
 import "./styles/App.css";
 import "./styles/App.scss";
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { validateProyectExists } from "./api/db";
+import { getProyect, validateProyectExists } from "./api/db";
 import BannerEditor from "./components/BannerEditor";
 import { FormProyects } from "./components/FormProyects";
 import Menu from "./components/Menu/Menu";
 import SystemInfoBox from "./components/SystemInfoBox/SystemInfoBox";
 import { useContentPathStore } from "./store/contentPathStore";
+import { listen, emit } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
+
+type Proyect = {
+  id: string | number;
+  name: string;
+  path: string;
+  delimiter: string;
+};
 
 function App() {
   const path = useContentPathStore((state) => state.pathMain);
@@ -41,6 +49,38 @@ function App() {
     };
     checkProject();
   }, [setPathMain]);
+
+  useEffect(() => {
+    const unlisten = listen("request-project-path", async (event) => {
+      console.log("request-project-path event received in App.tsx", event.payload);
+      const { projectName, originalPayload } = event.payload as { projectName: string, originalPayload: any };
+      try {
+        const data = await getProyect(projectName);
+        const proyectData = data as Proyect[];
+        if (proyectData.length > 0) {
+          emit("project-path-response", {
+            projectPath: proyectData[0].path,
+            originalPayload: originalPayload,
+          });
+        } else {
+          emit("project-path-response", {
+            projectPath: null,
+            originalPayload: originalPayload,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching project for backend request:", error);
+        emit("project-path-response", {
+          projectPath: null,
+          originalPayload: originalPayload,
+        });
+      }
+    });
+
+    return () => {
+      unlisten.then(f => f());
+    };
+  }, []);
 
   if (loading) {
     return <div>Loading...</div>;

@@ -9,7 +9,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc;
 
-use crate::MonitoredProjectPath;
+use crate::ActiveProjectPath;
 
 use encoding_rs::WINDOWS_1252;
 use std::io::{BufReader, Read, Seek, SeekFrom};
@@ -81,7 +81,7 @@ pub async fn start_watcher(
 	app_handle: AppHandle,
 	mut rx: mpsc::Receiver<()>,
 ) -> Result<(), String> {
-	let monitored_project_path = app_handle.state::<MonitoredProjectPath>();
+	let monitored_project_path = app_handle.state::<ActiveProjectPath>();
 	println!("File Watcher: Initializing...");
 
 	// MQTT Client Setup

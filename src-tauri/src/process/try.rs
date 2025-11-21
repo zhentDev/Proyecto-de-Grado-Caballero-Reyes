@@ -1,4 +1,4 @@
-use crate::MonitoredProjectPath;
+use crate::ActiveProjectPath;
 use std::sync::Arc;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
@@ -174,7 +174,7 @@ pub fn init_tray(
 						.unwrap();
 				}
 				"open_logs" => {
-					let state: State<MonitoredProjectPath> = app.state();
+					let state: State<ActiveProjectPath> = app.state();
 					let monitored_path = state.0.lock().unwrap();
 
 					if let Some(root) = &*monitored_path {

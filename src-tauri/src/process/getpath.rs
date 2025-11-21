@@ -1,10 +1,10 @@
-use crate::MonitoredProjectPath;
+use crate::ActiveProjectPath;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::{command, State};
 
 #[command]
-pub async fn open_folder_dialog(state: State<'_, MonitoredProjectPath>) -> Result<String, String> {
+pub async fn open_folder_dialog(state: State<'_, ActiveProjectPath>) -> Result<String, String> {
 	let folder = rfd::AsyncFileDialog::new().pick_folder().await;
 
 	if let Some(folder_handle) = folder {
